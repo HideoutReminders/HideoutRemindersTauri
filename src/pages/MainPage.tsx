@@ -1,16 +1,10 @@
-import {Dispatch, State} from "../types/types";
-import {promptToReminder} from "../lib/reminders";
-import {useState} from "react";
+import {Reminder} from "../types/types";
 import CreateReminder from "../components/CreateReminder";
+import {formatDateTime} from "../lib/helpers";
+import {useAppContext} from "../lib/state";
 
-export type PageProps = {
-	state: State,
-	dispatch: Dispatch
-}
-
-export default function MainPage (props: PageProps) {
-	const {state, dispatch} = props
-
+export default function MainPage () {
+	const {state} = useAppContext()
 
 	return <div>
 		<div>
@@ -21,8 +15,8 @@ export default function MainPage (props: PageProps) {
 		</div>
 		<div>
 			<h2>Upcoming</h2>
-			{state.reminders.map((r) => {
-				return <div key={r.id}>{r.text} @ {r.playAfter}</div>
+			{state.reminders.map((r: Reminder) => {
+				return <div key={r.id}>{r.text} @ {formatDateTime(r.playAfter)}</div>
 			})}
 		</div>
 	</div>

@@ -1,19 +1,19 @@
 import "./App.css";
-import {defaultState, useAppState} from "./lib/state";
-import {createContext, useState} from "react";
+import {useAppState} from "./lib/state";
+import {useState} from "react";
 import MainPage from "./pages/MainPage";
-import {Dispatch, State} from "./types/types";
+import {AppContextProvider} from "./lib/state";
 
 function App () {
   const [state, dispatch] = useAppState()
 	const [page, _setPage] = useState<'main' | 'setup' | 'settings'>('main')
 
-	return <AppContext.Provider value={{
+	return <AppContextProvider value={{
 		state,
 		dispatch,
 	}}>
-		{page === 'main' && <MainPage state={state} dispatch={dispatch} />}
-	</AppContext.Provider>
+		{page === 'main' && <MainPage />}
+	</AppContextProvider>
 }
 
 export default App;

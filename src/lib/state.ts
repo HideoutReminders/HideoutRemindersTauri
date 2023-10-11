@@ -1,9 +1,8 @@
-import {Dispatch, PauserInfo, PauserKey, Reminder, State} from "../types/types";
-import {createContext, useContext, useEffect, useReducer} from "react";
+import {PauserInfo, PauserKey, Reminder, AppState} from "../types/types";
+import {createContext, Dispatch, ReducerAction, ReducerState, useContext, useEffect, useReducer} from "react";
 import {getReminders, saveRemindersJSONFile} from "./reminders";
-import App from "../App";
 
-export function defaultState () : State {
+export function defaultState () : AppState {
 	const pausers : Record<PauserKey, PauserInfo> = {
 		poe: {
 			key: "poe",
@@ -41,7 +40,7 @@ export type Action = {type: 'SET_VOLUME', payload: number} |
 	{type: 'ADD_REMINDER', payload: Reminder} |
 	{type: 'SET_ERROR', payload: AppError}
 
-export function reducer (state: State, action: Action) : State {
+export function reducer (state: AppState, action: Action) : AppState {
 	let sortReminders = false
 	if (action.type === 'SET_VOLUME') {
 		state.settings.volume = action.payload
@@ -72,7 +71,7 @@ export function reducer (state: State, action: Action) : State {
 	}
 }
 
-export function reducerWithSaving (state: State, action: Action) {
+export function reducerWithSaving (state: AppState, action: Action) {
 	const newState = reducer(state, action)
 
 	const doSaveSettings = ['SET_VOLUME'].includes(action.type)
@@ -90,13 +89,15 @@ export function reducerWithSaving (state: State, action: Action) {
 	return newState
 }
 
+const DEFAULT_STATE = defaultState()
+
 export function useAppState () {
-	const [state, dispatch] = useReducer<State>(reducerWithSaving, defaultState())
+	const [state, dispatch] = useReducer(reducerWithSaving, DEFAULT_STATE as ReducerState<AppState>)
 
 	useEffect(() => {
 		async function load () {
 			const reminders = await getReminders()
-			dispatch(state, {
+			dispatch({
 				type: 'SET_REMINDERS',
 				payload: reminders,
 			})
@@ -110,15 +111,17 @@ export function useAppState () {
 
 
 export const AppContext = createContext<{
-	state: State,
-	dispatch: Dispatch,
+	state: AppState,
+	dispatch: Dispatch<ReducerAction<AppState>>,
 }>({
 	state: defaultState(),
-	dispatch: (d: State) => {
+	dispatch: (_a: Action) : AppState => {
 		throw new Error('No!')
-		return d
+		return defaultState()
 	}
 })
+
+export const AppContextProvider = AppContext.Provider
 
 export function useAppContext () {
 	const ctx = useContext(AppContext)

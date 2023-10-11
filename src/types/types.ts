@@ -1,4 +1,4 @@
-import {Action, AppError} from "../lib/state";
+import {AppError} from "../lib/state";
 
 export type PauserKey = 'poe' // | 'steam'
 
@@ -16,7 +16,7 @@ export type PauserPoEInfo = {
 
 type PauserSettings = PauserPoESettings // | PauserSteamSettings
 
-type Pauser = {
+export type Pauser = {
 	key: PauserKey
 	settings: PauserSettings
 }
@@ -42,11 +42,10 @@ export type Reminder = {
 	createdAt: Date
 }
 
-export type State = {
+export type AppState = {
 	settings: Settings
 	pausers: Record<PauserKey, PauserInfo>
 	reminders: Reminder[]
 	errors: AppError[],
 }
 
-export type Dispatch = (state: State, a: Action) => State
