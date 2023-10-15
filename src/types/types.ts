@@ -1,37 +1,11 @@
 import {AppError} from "../lib/state";
-
-export type PauserKey = 'poe' // | 'steam'
-
-type PauserPoESettings = {
-	clientTxtPath: string
-	pauseWhileAFK: boolean
-	unpauseAfterXSecondsOfInactivity: number // TODO: Rename this
-}
-
-export type PauserPoEInfo = {
-	zoneName: string
-	afk: boolean
-	isSafe: boolean
-}
-
-type PauserSettings = PauserPoESettings // | PauserSteamSettings
-
-export type Pauser = {
-	key: PauserKey
-	settings: PauserSettings
-}
-
-export type PauserInfo = {
-	key: PauserKey
-	info: PauserPoEInfo
-	lastUpdated: Date
-} // | PauserSteamInfo
+import {PoEStatus} from "../lib/poe";
 
 export type Settings = {
 	volume: number // 0 to 100
-	ttsVoice: string
+	ttsVoice: number // Index when calling getVoices()
 	ttsVoiceRandom: boolean
-	pausers: Partial<Record<PauserKey, PauserSettings>>
+	clientTxt: string
 }
 
 export type Reminder = {
@@ -42,10 +16,10 @@ export type Reminder = {
 	createdAt: Date
 }
 
-export type AppState = {
+export interface AppState {
 	settings: Settings
-	pausers: Record<PauserKey, PauserInfo>
 	reminders: Reminder[]
 	errors: AppError[],
+	poeStatus: null | PoEStatus
 }
 

@@ -1,7 +1,7 @@
 import {useEffect, useState} from "react";
 import {getRandom} from "../lib/helpers";
 import {promptToReminder} from "../lib/reminders";
-import {useAppContext} from "../lib/state";
+import {useAppStore} from "../lib/store";
 
 const placeholders = [
 	'do the dishes in 10 minutes',
@@ -13,7 +13,7 @@ const placeholders = [
 ]
 
 export default function CreateReminder () {
-	const {dispatch} = useAppContext()
+	const {addReminder} = useAppStore()
 	const [placeholder, setPlaceholder] = useState(getRandom<string>(placeholders))
 	const [text, setText] = useState('')
 
@@ -30,26 +30,22 @@ export default function CreateReminder () {
 	async function submit (e: React.FormEvent) {
 		e.preventDefault()
 		if (!text) {
+			console.log('no text')
 			return
 		}
 		if (!text.trim()) {
+			console.log('no trim')
 			return
 		}
 		try {
 			const r = promptToReminder(text)
-			dispatch({
-				type: 'ADD_REMINDER',
-				payload: r,
-			})
+			console.log('adding ', r)
+			addReminder(r)
+			setText('')
 		}
 		catch (ex) {
-			dispatch({
-				type: 'SET_ERROR',
-				payload: {
-					context: 'reminders_add',
-					message: ex.toString()
-				},
-			})
+			console.error(ex)
+			throw ex
 		}
 	}
 
@@ -62,7 +58,7 @@ export default function CreateReminder () {
 						setText(e.target.value)
 					}}
 					type={'text'}
-					className={'form-control form-control-reminder'}
+					className={'input input-rounded border-sm'}
 					placeholder={placeholder}
 				/>
 			</div>

@@ -1,38 +1,30 @@
-import {PauserInfo, PauserKey, Reminder, AppState} from "../types/types";
-import {createContext, Dispatch, ReducerAction, ReducerState, useContext, useEffect, useReducer} from "react";
-import {getReminders, saveRemindersJSONFile} from "./reminders";
+import {AppState, Settings} from "../types/types";
 
-export function defaultState () : AppState {
-	const pausers : Record<PauserKey, PauserInfo> = {
-		poe: {
-			key: "poe",
-			info: {
-				zoneName: '',
-				isSafe: false,
-				afk: false,
-			},
-			lastUpdated: new Date(),
-		}
-	}
+export function defaultSettings () :Settings {
 	return {
-		settings: {
-			volume: 100,
-			ttsVoice: '',
-			ttsVoiceRandom: true,
-			pausers: {},
-		},
-		errors: [],
-		reminders: [],
-		pausers: pausers,
+		volume: 100,
+		ttsVoice: 0,
+		ttsVoiceRandom: true,
+		clientTxt: '',
 	}
 }
 
-type ErrorContext = 'reminders_add' | 'reminders_edit' | 'settings_save'
+export function defaultState () : AppState {
+	return {
+		settings: defaultSettings(),
+		errors: [],
+		reminders: [],
+	}
+}
+
+type ErrorContext = 'reminders_add' | 'reminders_edit' | 'settings_save' | 'poe_status'
 
 export type AppError = {
+	key?: string
 	context: ErrorContext
 	message: string
 }
+/*
 
 export type Action = {type: 'SET_VOLUME', payload: number} |
 	{type: 'SET_TTS_RANDOM', payload: boolean} |
@@ -127,3 +119,4 @@ export function useAppContext () {
 	const ctx = useContext(AppContext)
 	return ctx
 }
+*/
