@@ -13,7 +13,7 @@ const placeholders = [
 ]
 
 export default function CreateReminder () {
-	const {addReminder} = useAppStore()
+	const {addReminder, addError} = useAppStore()
 	const [placeholder, setPlaceholder] = useState(getRandom<string>(placeholders))
 	const [text, setText] = useState('')
 
@@ -44,27 +44,28 @@ export default function CreateReminder () {
 			setText('')
 		}
 		catch (ex) {
-			console.error(ex)
+			addError({
+				context: 'reminders_add',
+				message: ex.toString()
+			})
 			throw ex
 		}
 	}
 
-	return <div>
+	return <>
 		<form className={'form-inline'} onSubmit={submit}>
-			<div className={'form-group flex-grow'}>
+			<div className={'join flex'}>
 				<input
 					value={text}
 					onChange={(e) => {
 						setText(e.target.value)
 					}}
 					type={'text'}
-					className={'input input-rounded border-sm'}
+					className={'join-item input focus:placeholder-gray-600 focus:outline-none input-bordered border-sm flex-1'}
 					placeholder={placeholder}
 				/>
-			</div>
-			<div className={'form-group buttons ps-1'}>
-				<button type={'submit'} className={'btn btn-primary'}>Add</button>
+				<button type={'submit'} className={'join-item btn btn-primary'}>Add Reminder</button>
 			</div>
 		</form>
-	</div>
+	</>
 }

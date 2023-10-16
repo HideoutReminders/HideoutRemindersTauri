@@ -8,16 +8,15 @@ use serde_json::json;
 use serde::Serialize;
 
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
 struct PoEClientStatus {
 	zone_name: String,
 	afk: bool,
 	zone_changed_at: String,
-	most_recent_line_at: String
+	most_recent_line_at: String,
+	success: bool,
 }
 
 #[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
 struct ErrorResponse {
 	success: bool,
 	message: String,
@@ -29,7 +28,7 @@ fn error_res(msg: String) -> String {
 		success: false,
 		message: msg.to_string(),
 	};
-	let j = serde_json::to_string(&err).expect(err);
+	let j = serde_json::to_string(&err).expect(&"{success: false, \"error\": \"Could not serialize error object\"}");
   format!("{}", j)
 }
 
@@ -52,20 +51,23 @@ fn poe_status(client_txt_path: &str) -> String {
 
 	let fp: &str = client_txt_path;
 	if fp == "" {
-		return error_res("No client txt path provided");
+		return error_res(String::from("No client txt path provided"));
 	}
 
 	println!("path: {fp}");
-  let file = File::open(fp).unwrap();
+  let file = match File::open(fp) {
+    Err(why) => return error_res(format!("Could not open file: {}", why)),
+    Ok(file) => file,
+  };
   let rev_lines = RevLines::new(file);
 
-	let mut num = 1;
-
+	let mut num = 1; // Count so we don't loop for too long
 	let mut poe_status = PoEClientStatus {
 		zone_changed_at: String::from(""),
 		zone_name: String::from(""),
 		afk: false,
 		most_recent_line_at: String::from(""),
+		success: true,
 	};
 
 	for line in rev_lines {
@@ -88,6 +90,10 @@ fn poe_status(client_txt_path: &str) -> String {
 		// Skip blank lines
 		if txt.len() == 0 {
 			continue
+		}
+
+		if txt.len() < date_len {
+			return error_res(String::from("That doesn't look like a PoE client.txt file."));
 		}
 
 		// Get the date of the current line we are reading
@@ -115,8 +121,8 @@ fn poe_status(client_txt_path: &str) -> String {
 			continue
 		}
 	}
-	let err = error_res("Could not serialize JSON");
-	let j = serde_json::to_string(&poe_status).expect(err);
+	let err = error_res(String::from("Could not serialize JSON"));
+	let j = serde_json::to_string(&poe_status).expect(&err);
   format!("{}", j)
 }
 

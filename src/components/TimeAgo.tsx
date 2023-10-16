@@ -15,7 +15,7 @@ export default function TimeAgo ({date}: {date: Date}) {
 				setInner('just now')
 			}
 			else if (diffS < 60) {
-				setInner(diffS + 's ago')
+				setInner('<1m')
 			}
 			else if (diffS < (60 * 60)) {
 				setInner(Math.round(diffS / 60) + 'm ago')
@@ -41,11 +41,11 @@ export default function TimeAgo ({date}: {date: Date}) {
 		return () => {
 			clearInterval(interval)
 		}
-	}, [])
+	}, [`${date}`])
 
 	if (!date) {
 		return null
 	}
 
-	return <em className={'time-ago'}>{inner}</em>
+	return <span className={'time-ago'}>{inner}</span>
 }

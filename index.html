@@ -2,9 +2,29 @@
 <html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Tauri + React + TS</title>
+    <title>Hideout Reminders</title>
+		<style>
+			html, body {
+				min-height: 100vh;
+			}
+			html, body, :root {
+				background: #333;
+			}
+			body {
+			}
+			
+			#root {
+				height: 100vh;
+				display: grid;
+				grid-template-rows: min-content auto;
+			}
+			
+			#content {
+				height: 100%;
+				overflow-y: scroll;
+			}
+		</style>
   </head>
 
   <body>

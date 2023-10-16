@@ -1,81 +1,92 @@
 import "./styles.css";
-import {useEffect, useState} from "react";
 import MainPage from "./pages/MainPage";
 import SettingsPage from "./pages/SettingsPage";
-import {useAppStore, AppStorage} from './lib/store'
-import {Reminder, Settings} from "./types/types";
-import {defaultSettings} from "./lib/state";
-import {getPoEClientStatus, PoEStatus} from "./lib/poe";
-import {formatDateTime} from "./lib/helpers";
+import {AppError, PageKey, useAppStore} from './lib/store'
+import SVGIcon from "./components/SVGIcon";
+import useLoadApp from "./hooks/use-load-app";
+import useUpdatePoEStatus from "./hooks/use-update-poe-status";
+import PoEStatus from "./components/PoEStatus";
 
 function App () {
-	const {setReminders, setSettings, settings, errors, addError} = useAppStore()
-	const [poeStatus, setPoEStatus] = useState<PoEStatus | null>()
-	const [page, setPage] = useState<'main' | 'setup' | 'settings'>('main')
+	const {
+		errors,
+		page,
+		removeError,
+		loading,
+	} = useAppStore()
+	useLoadApp()
+	useUpdatePoEStatus()
 
-	useEffect(() => {
-		AppStorage.get<Settings>('settings').then((s) => {
-			console.log('s', s)
-			if (s && s.hasOwnProperty('volume')) {
-				setSettings(s)
-			}
-			else {
-				setSettings(defaultSettings())
-			}
-		})
-		AppStorage.get<Reminder[]>('reminders').then((rs) => {
-			if (rs) {
-				setReminders(rs)
-			}
-		})
-	}, [])
-
-	useEffect(() => {
-		let interval = setInterval(() => {
-			if (!settings.clientTxt) {
-				console.log('DO SOMETHIGN ABOUT BLANK')
-				return
-			}
-			getPoEClientStatus(settings.clientTxt).then((stat) => {
-				console.log('stat', stat)
-				setPoEStatus(stat)
-			}).catch((err) => {
-				addError({
-					context: 'poe_status',
-					key: 'poe_status',
-					message: err.toString(),
-				})
-			})
-		}, 1000)
-
-		return () => {
-			clearInterval(interval)
-		}
-	}, [settings.clientTxt])
-
-	return <div>
-		<ul className={'menu menu-horizontal bg-base-200 w-full mb-2 shadow-lg'}>
-			<li className={'me-2 ' + (page === 'main' ? 'active' : '')}><a href={'#main'} onClick={() => setPage('main')}>Home</a></li>
-			<li className={'me-2 ' + (page === 'settings' ? 'active' : '')}><a href={'#settings'} onClick={() => setPage('settings')}>Settings</a></li>
-		</ul>
-		{errors.map((e) => {
-			return <div className="alert alert-error" key={e.key}>
-				<svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none"
-						 viewBox="0 0 24 24">
-					<path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2"
-								d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-				</svg>
-				<span>{e.message}</span>
+	if (loading) {
+		return <div>
+			<div className="flex justify-center items-center w-screen h-screen">
+				<div role="status">
+					<SVGIcon type={'spinner'} />
+					<span className="sr-only">Loading...</span>
+				</div>
 			</div>
-		})}
-		{poeStatus && <div>
-			<div>Client Read {formatDateTime(poeStatus.mostRecentLineAt)}</div>
-			<div>You joined {poeStatus.zoneName} {formatDateTime(poeStatus.zoneChangedAt)}</div>
-			<div className={'alert alert-info'}>{JSON.stringify(poeStatus)}</div>
-		</div>}
-		{page === 'main' && <MainPage />}
-		{page === 'settings' && <SettingsPage />}
-	</div>
+		</div>
+	}
+
+	return <>
+		<div id={'header'} className={'sticky top-0 z-50 flex w-full bg-slate-900 drop-shadow-lg justify-between'}>
+			<ul className={'flex-0 menu menu-horizontal'}>
+				<NavItem
+					label={'Reminders'}
+					page={'main'}
+				/>
+				<NavItem
+					label={'Settings'}
+					page={'settings'}
+				/>
+			</ul>
+			<PoEStatus />
+		</div>
+		<div id={'content'} className={''}>{/*TODO: Make this the only vertical scroll that we have somehow. I think we remove the sticky from header?*/}
+			<div className={'relative flex-1 p-4 pb-0 ' + (errors.length === 0 ? 'hidden' : 'block')}>
+				{errors.map((e: AppError) => {
+					let label = ''
+					let canDelete = true
+					if (e.context === 'poe_status') {
+						label = 'PoE Client Txt'
+						canDelete = false
+					}
+
+					return <div className="alert alert-error gap-2" key={e.key}>
+						<SVGIcon type={'error'} />
+						<div>
+							{label && <><strong>{label}:</strong>{" "}</>}
+							<span>{e.message || 'Unknown error occurred'}</span>
+						</div>
+						{canDelete && <button type={'button'} onClick={() => {
+							removeError(e.key)
+						}}>
+							X
+						</button>}
+					</div>
+				})}
+			</div>
+			<div style={{display: page === 'main' ? 'block' : 'none'}}><MainPage /></div>
+			<div style={{display: page === 'settings' ? 'block' : 'none'}}><SettingsPage /></div>
+		</div>
+	</>
+}
+
+function NavItem (props: {label: string, page: PageKey}) {
+	const {page, setPage} = useAppStore()
+	const active = props.page === page
+	const activeClasses = 'active'
+	const inactiveClasses = ''
+
+	return <li className={{}}>
+		<a
+			href={'#' + props.page}
+			onClick={() => setPage(props.page)}
+			className={'text-lg me-2 rounded ' + (active ? activeClasses : inactiveClasses)}
+		>
+			{props.label}
+		</a>
+	</li>
 }
 
 export default App;
