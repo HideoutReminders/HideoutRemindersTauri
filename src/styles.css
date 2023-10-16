@@ -2,14 +2,46 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-    --color-success: #36d399;
-}
-
 @layer components {
 	.btn{
 		text-transform: none;
 	}
+}
+
+html, body {
+    min-height: 100vh;
+}
+html, body, :root {
+
+}
+body {
+    background: url('/alarm-bg.png') center center no-repeat fixed;
+    background-size: cover;
+    position: relative;
+}
+
+body:before {
+    content: " ";
+    background: rgba(0, 0, 0, 0.75);
+    top: 0px;
+    left: 0px;
+    position: absolute;
+    z-index: 0;
+    width: 100%;
+    height: 100%;
+}
+
+#root {
+    height: 100vh;
+    display: grid;
+    grid-template-rows: min-content auto;
+    position: relative;
+    z-index: 1;
+}
+
+#content {
+    height: 100%;
+    overflow-y: scroll;
 }
 
 @keyframes sound {

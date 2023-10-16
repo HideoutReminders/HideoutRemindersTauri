@@ -1,4 +1,5 @@
 import {invoke} from '@tauri-apps/api/tauri'
+import {AppError} from "./store";
 
 const SAFE_ZONES = `Lioneye's Watch
 The Forest Encampment

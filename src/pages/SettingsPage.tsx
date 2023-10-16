@@ -1,5 +1,5 @@
 import {AppDatabase, DB_KEY_SETTINGS, useAppStore} from "../lib/store";
-import {useEffect, useRef, useState} from "react";
+import {ReactNode, useEffect, useRef, useState} from "react";
 import {open} from '@tauri-apps/api/dialog';
 import {Settings} from "../types/types";
 import TimeAgo from "../components/TimeAgo";
@@ -185,7 +185,13 @@ export default function SettingsPage () {
 	</div>
 }
 
-function FormGroup ({children, label, description}) {
+
+type FormGroupProps = {
+	children: ReactNode,
+	label: string
+	description?: string
+}
+function FormGroup ({children, label, description}: FormGroupProps) {
 	return <Card className={'form-control mb-4'}>
 		<label className="label">
 			<span className="label-text font-bold text-lg">{label}</span>
@@ -199,8 +205,8 @@ function FormGroup ({children, label, description}) {
 	</Card>
 }
 
-function PlayButton ({onClick, className} : {onClick: Function, className: string}) {
-	return <button type={'button'} className={'animate-none flex-none join-item btn-sm btn-outline btn ' + className} onClick={onClick}>
+export function PlayButton ({onClick, className} : {onClick: Function, className: string}) {
+	return <button type={'button'} className={'animate-none flex-none join-item btn-sm btn-outline btn ' + className} onClick={() => onClick()}>
 		<SVGIcon type={'play'} className={'w-5 h-5'} />
 		Preview
 	</button>

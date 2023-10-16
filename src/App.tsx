@@ -78,7 +78,7 @@ function NavItem (props: {label: string, page: PageKey}) {
 	const activeClasses = 'active'
 	const inactiveClasses = ''
 
-	return <li className={{}}>
+	return <li>
 		<a
 			href={'#' + props.page}
 			onClick={() => setPage(props.page)}

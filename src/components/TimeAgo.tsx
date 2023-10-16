@@ -1,4 +1,4 @@
-import {ReactNode, useEffect, useState} from "react";
+import {useEffect, useState} from "react";
 
 export default function TimeAgo ({date}: {date: Date}) {
 	const [inner, setInner] = useState('')

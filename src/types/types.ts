@@ -1,6 +1,3 @@
-import {PoEStatus} from "../lib/poe";
-import {AppError} from "../lib/store";
-
 export type Settings = {
 	volume: number // 0 to 100
 	ttsVoice: number // Index when calling getVoices()

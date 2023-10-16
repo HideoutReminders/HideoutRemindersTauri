@@ -66,11 +66,11 @@ type Setters = {
 
 type ZustandStore = AppState & Setters
 
-const log = (config) => (set, get, api) =>
+const log = (config) => (set: ZustandSetPlaceHolderType, get: ZustandGetPlaceHolderType, api: ZustandAPIPlaceHolderType) =>
 	config(
-		(...args) => {
+		(...args: any[]) => {
 			set(...args)
-			const updated = get()
+			const updated = get() as AppState
 
 			// TODO: Make sure there's some pruning of certain fields that we don't need to save
 			// Like whether a reminder is currently playing or not, which isn't something that is saved to the db
@@ -79,7 +79,7 @@ const log = (config) => (set, get, api) =>
 			// TODO: settingsStoreToStorage() and settingsStorageToStore() -- Maybe some less confusing names? Database instead of storage?
 			// TODO: Also maybe move this into a different function instead of middleware? saveReminders = update in store + save in db
 			AppDatabase.set(DB_KEY_REMINDERS, updated.reminders).then(() => {
-				//console.log('saving remidners', updated.reminders)
+				console.log('saving reminders', updated.reminders)
 			})
 		},
 		get,
@@ -88,7 +88,11 @@ const log = (config) => (set, get, api) =>
 
 export const AppDatabase = new Store(".settings.dat");
 
-export const useAppStore = create<ZustandStore>()(log((set) => {
+type ZustandSetPlaceHolderType = any
+type ZustandGetPlaceHolderType = any
+type ZustandAPIPlaceHolderType = any
+
+export const useAppStore = create<ZustandStore>()(log((set: ZustandSetPlaceHolderType) => {
 	const state : ZustandStore = {
 		...defaultState(),
 		setPage: (p: PageKey) => set(() => ({
@@ -103,7 +107,7 @@ export const useAppStore = create<ZustandStore>()(log((set) => {
 				lastSavedAt: new Date(),
 			},
 		})),
-		saveReminder: (toSave: Reminder) => set((state) => {
+		saveReminder: (toSave: Reminder) => set((state: AppState) => {
 			return {
 				reminders: [
 					...state.reminders
@@ -116,7 +120,7 @@ export const useAppStore = create<ZustandStore>()(log((set) => {
 				})
 			}
 		}),
-		addReminder: (r: Reminder) => set((state) => {
+		addReminder: (r: Reminder) => set((state: AppState) => {
 			return {
 				reminders: [
 					r,
@@ -132,16 +136,22 @@ export const useAppStore = create<ZustandStore>()(log((set) => {
 				...p,
 			} : null,
 		})),
-		addError: (e: AppError) => set((state) => {
-			if (e.message.indexOf('Error: ') === 0) {
-				e.message = e.message.substring('Error: '.length)
+		addError: (def: ErrorDef) => set((state: AppState) => {
+			const err : AppError = {
+				message: def.message,
+				key: def.key || 'auto_' + Date.now() + '_' + state.errors.length,
+				context: def.context
+			}
+
+			if (def.message.indexOf('Error: ') === 0) {
+				def.message = def.message.substring('Error: '.length)
 			}
 
 			for (let i = 0; i < state.errors.length; i++) {
 				const se = state.errors[i]
-				if (se.key && se.key === e.key) {
+				if (se.key && se.key === def.key) {
 					const newErrors = state.errors
-					newErrors[i] = e
+					newErrors[i] = err
 					return {
 						errors: [
 							...newErrors
@@ -150,20 +160,19 @@ export const useAppStore = create<ZustandStore>()(log((set) => {
 				}
 			}
 
-			e.key = e.key || 'auto_' + Date.now() + '_' + state.errors.length
 			return {
 				errors: [
-					e,
+					err,
 					...state.errors,
 				]
 			}
 		}),
-		removeError: (k: string) => set((state) => ({
-			errors: state.errors.filter(x => x.key !== k)
+		removeError: (k: string) => set((state: AppState) => ({
+			errors: state.errors.filter((x: AppError) => x.key !== k)
 		})),
-		clearContextErrors: (ctx: ErrorContext) => set((state) => {
+		clearContextErrors: (ctx: ErrorContext) => set((state: AppState) => {
 			return {
-				errors: state.errors.filter(x => x.context !== ctx)
+				errors: state.errors.filter((x: AppError) => x.context !== ctx)
 			}
 		}),
 	}

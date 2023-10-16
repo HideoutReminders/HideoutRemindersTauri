@@ -40,14 +40,14 @@ export default function useUpdatePoEStatus () {
 				clearContextErrors('poe_status')
 			}).catch((err: AppError | unknown) => {
 				setPoEStatus(null)
-				if (err.context) {
+				if (err && typeof err === 'object' && err.context) {
 					addError(err as AppError)
 					return
 				}
 				addError({
 					context: 'poe_status',
 					key: 'poe_status',
-					message: err.toString(),
+					message: `${err}`,
 				})
 			})
 		}

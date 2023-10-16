@@ -46,7 +46,7 @@ export default function CreateReminder () {
 		catch (ex) {
 			addError({
 				context: 'reminders_add',
-				message: ex.toString()
+				message: `${ex}`
 			})
 			throw ex
 		}
@@ -61,7 +61,7 @@ export default function CreateReminder () {
 						setText(e.target.value)
 					}}
 					type={'text'}
-					className={'join-item input focus:placeholder-gray-600 focus:outline-none input-bordered border-sm flex-1'}
+					className={'join-item input placeholder-gray-500 focus:placeholder-gray-700 focus:outline-none input-bordered border-sm flex-1'}
 					placeholder={placeholder}
 				/>
 				<button type={'submit'} className={'join-item btn btn-primary'}>Add Reminder</button>

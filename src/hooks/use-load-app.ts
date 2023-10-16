@@ -1,7 +1,6 @@
 import {useEffect} from "react";
 import {AppDatabase, DB_KEY_REMINDERS, DB_KEY_SETTINGS, defaultSettings, useAppStore} from "../lib/store";
 import {Reminder, Settings} from "../types/types";
-import App from "../App";
 
 export default function useLoadApp () {
 	const {
@@ -47,7 +46,7 @@ export default function useLoadApp () {
 				}
 			}),
 			AppDatabase.get<any[]>(DB_KEY_REMINDERS).then((rs) => {
-				console.log('reminders get rs', rs)
+				console.log('reminders form db', rs)
 				if (rs) {
 					// TODO: Probably make a reminderFromDatabase mapping function
 					setReminders(rs.map((r: any) : Reminder => {
