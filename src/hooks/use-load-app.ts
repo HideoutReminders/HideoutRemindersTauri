@@ -1,6 +1,7 @@
-import {useEffect, useState} from "react";
+import {useEffect} from "react";
 import {AppDatabase, DB_KEY_REMINDERS, DB_KEY_SETTINGS, defaultSettings, useAppStore} from "../lib/store";
 import {Reminder, Settings} from "../types/types";
+import App from "../App";
 
 export default function useLoadApp () {
 	const {
@@ -11,22 +12,28 @@ export default function useLoadApp () {
 		setReminders,
 	} = useAppStore()
 	useEffect(() => {
+		AppDatabase.keys().then((keys) => {
+			console.log('keys', keys)
+		})
+
 		Promise.all([
 			AppDatabase.get<Settings>(DB_KEY_SETTINGS).then((s) => {
 				console.log('settings from our storage', s)
-				if (s.default) {
+				if (s && s.default) {
 					addError({
 						key: 'settings_defaults',
 						context: 'general',
 						message: 'Why come defaults are saved in our db',
 					})
+					return 'whyy is default saved'
 				}
 				// @ts-ignore
-				if (s.value && typeof s.value === 'number') {
+				if (s && s.value && typeof s.value === 'number') {
 					addError({
 						context: 'general',
 						message: 'wtf is this settings thing'
 					})
+					return 'got that old one'
 				}
 				if (s && s.hasOwnProperty('volume')) {
 					console.log('set that!')
@@ -40,6 +47,7 @@ export default function useLoadApp () {
 				}
 			}),
 			AppDatabase.get<any[]>(DB_KEY_REMINDERS).then((rs) => {
+				console.log('reminders get rs', rs)
 				if (rs) {
 					// TODO: Probably make a reminderFromDatabase mapping function
 					setReminders(rs.map((r: any) : Reminder => {

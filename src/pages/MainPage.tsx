@@ -1,8 +1,7 @@
-import {Reminder} from "../types/types";
 import CreateReminder from "../components/CreateReminder";
-import {formatDateTime} from "../lib/helpers";
 import {useAppStore} from "../lib/store";
 import Card from "../components/Card";
+import RemindersList from "../components/RemindersList";
 
 export default function MainPage () {
 	const {reminders} = useAppStore()
@@ -11,11 +10,8 @@ export default function MainPage () {
 			<CreateReminder />
 		</Card>
 		<Card>
-			<h2 className={'text-lg mb-2'}>Upcoming</h2>
-			{reminders.length === 0 && <div>No upcoming reminders.</div>}
-			{reminders.map((r: Reminder) => {
-				return <div key={r.id}>{r.text} @ {formatDateTime(r.playAfter)}</div>
-			})}
+			<h2 className={'text-lg mb-2'}>Reminders</h2>
+			<RemindersList reminders={reminders} />
 		</Card>
 	</>
 }

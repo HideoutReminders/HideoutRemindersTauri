@@ -66,8 +66,8 @@ function App () {
 					</div>
 				})}
 			</div>
-			<div style={{display: page === 'main' ? 'block' : 'none'}}><MainPage /></div>
-			<div style={{display: page === 'settings' ? 'block' : 'none'}}><SettingsPage /></div>
+			{page === 'main' && <MainPage />}
+			{page === 'settings' && <SettingsPage />}
 		</div>
 	</>
 }

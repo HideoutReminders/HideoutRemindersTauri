@@ -55,6 +55,21 @@ export function promptToReminder (prompt: string) : Reminder {
 	return r
 }
 
+
+export type ReminderStatus = 'upcoming' |
+	'queued' | // It needs to play but another one is currently playing
+	'playing' |
+	'done'
+export function getReminderStatus (r: Reminder, currentlyPlaying?: string) : ReminderStatus {
+	if (currentlyPlaying && currentlyPlaying === r.id) {
+		return 'playing'
+	}
+	if (r.playedAt) {
+		return 'done'
+	}
+	return currentlyPlaying ? 'queued' : 'upcoming'
+}
+
 export async function ensureRemindersJSONFile () {
 	await ensureJSONFile<Reminder[]>(REMINDERS_FILE, [])
 }
