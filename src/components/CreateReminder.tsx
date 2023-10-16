@@ -13,7 +13,7 @@ const placeholders = [
 ]
 
 export default function CreateReminder () {
-	const {addReminder, addError} = useAppStore()
+	const {addReminder, addError, clearContextErrors} = useAppStore()
 	const [placeholder, setPlaceholder] = useState(getRandom<string>(placeholders))
 	const [text, setText] = useState('')
 
@@ -42,6 +42,7 @@ export default function CreateReminder () {
 			console.log('adding ', r)
 			addReminder(r)
 			setText('')
+			clearContextErrors('reminders_add')
 		}
 		catch (ex) {
 			addError({

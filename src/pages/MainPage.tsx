@@ -9,9 +9,9 @@ export default function MainPage () {
 		<Card>
 			<CreateReminder />
 		</Card>
-		<Card>
+		<div className={'p-4'}>
 			<h2 className={'text-lg mb-2'}>Reminders</h2>
 			<RemindersList reminders={reminders} />
-		</Card>
+		</div>
 	</>
 }
