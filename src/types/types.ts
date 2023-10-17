@@ -1,6 +1,6 @@
 export type Settings = {
 	volume: number // 0 to 100
-	ttsVoice: number // Index when calling getVoices()
+	ttsVoiceIdx: number // Index when calling getVoices()
 	ttsVoiceRandom: boolean
 	poeClientTxtPath: string
 	lastSavedAt: null | Date

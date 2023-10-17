@@ -15,14 +15,14 @@ html, body, :root {
 
 }
 body {
-    background: url('/alarm-bg.png') center center no-repeat fixed;
+    background: url('/cloudsbg.png') center center no-repeat fixed;
     background-size: cover;
     position: relative;
 }
 
 body:before {
     content: " ";
-    background: rgba(0, 0, 0, 0.75);
+    background: rgba(0, 0, 0, 0.85);
     top: 0px;
     left: 0px;
     position: absolute;

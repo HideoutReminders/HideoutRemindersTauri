@@ -9,7 +9,7 @@ export const DB_KEY_REMINDERS = 'reminders'
 export function defaultSettings () : Settings {
 	return {
 		volume: 100,
-		ttsVoice: 0,
+		ttsVoiceIdx: 0,
 		ttsVoiceRandom: true,
 		poeClientTxtPath: '',
 		lastSavedAt: null,

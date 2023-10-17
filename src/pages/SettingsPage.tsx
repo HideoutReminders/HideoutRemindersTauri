@@ -15,7 +15,7 @@ export default function SettingsPage () {
 	const {settings, setSettings, addError, errors} = useAppStore()
 	const [volume, setVolume] = useState<number>(settings.volume)
 	const [clientTxt, setClientTxt] = useState<string | undefined>(settings.poeClientTxtPath)
-	const [ttsVoice, setTTSVoice] = useState<number>(settings.ttsVoice)
+	const [ttsVoice, setTTSVoice] = useState<number>(settings.ttsVoiceIdx)
 	const [voices, setVoices] = useState<VoiceOption[]>([])
 	const volChangeRef = useRef<NodeJS.Timeout | null>(null)
 	const clientTxtChangeRef = useRef<NodeJS.Timeout | null>(null)
@@ -30,8 +30,8 @@ export default function SettingsPage () {
 	}, [settings.poeClientTxtPath])
 
 	useEffect(() => {
-		setTTSVoice(settings.ttsVoice)
-	}, [settings.ttsVoice])
+		setTTSVoice(settings.ttsVoiceIdx)
+	}, [settings.ttsVoiceIdx])
 
 	useEffect(() => {
 		function onVoicesChanged () {
@@ -90,7 +90,7 @@ export default function SettingsPage () {
 		setTTSVoice(idx)
 		saveSettings({
 			...settings,
-			ttsVoice: idx,
+			ttsVoiceIdx: idx,
 		})
 	}
 
