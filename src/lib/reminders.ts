@@ -1,5 +1,5 @@
 import * as chrono from 'chrono-node'
-import {Reminder, Settings} from "../types/types";
+import {Reminder} from "../types/types";
 import {ensureJSONFile, readJSON, REMINDERS_FILE, saveJSON} from "./files";
 
 let idCount = 0
@@ -81,21 +81,5 @@ export async function getReminders () : Promise<Reminder[]> {
 
 export async function saveRemindersJSONFile (reminders: Reminder[]) {
 	await ensureRemindersJSONFile()
-	await saveJSON(REMINDERS_FILE, reminders)
-}
-
-export async function playReminder (r: Reminder, settings: Settings) {
-	return new Promise((res, rej) => {
-		const utterThis = new SpeechSynthesisUtterance(r.text);
-		const voices = window.speechSynthesis.getVoices()
-		utterThis.voice = voices[settings.ttsVoiceIdx]
-		utterThis.volume = settings.volume / 100
-		utterThis.onend = () => {
-			res()
-		}
-		utterThis.onerror = (evt) => {
-			rej(evt.error)
-		}
-		window.speechSynthesis.speak(utterThis);
-	})
+	return await saveJSON(REMINDERS_FILE, reminders)
 }

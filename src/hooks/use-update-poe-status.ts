@@ -14,7 +14,6 @@ export default function useUpdatePoEStatus () {
 
 	useEffect(() => {
 		if (loading) {
-			console.log('do not do this while loading')
 			return
 		}
 

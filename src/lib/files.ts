@@ -11,6 +11,7 @@ import {
 type FileName = 'reminders.json' | 'settings.json'
 
 export const REMINDERS_FILE : FileName = 'reminders.json'
+export const SETTINGS_FILE : FileName = 'settings.json'
 
 const FILE_OPTS = {
 	dir: BaseDirectory.AppData,
@@ -21,10 +22,14 @@ async function ensureDataDir () {
 }
 
 export async function ensureJSONFile<T>(file: FileName, defaultData: T) {
+	console.log('try to ensure', file)
 	await ensureDataDir()
 	const alreadyThere = await exists(file, FILE_OPTS)
+	console.log('already', alreadyThere)
 	if (!alreadyThere) {
+		console.log('try to add it!')
 		await saveJSON<T>(file, defaultData)
+		console.log('saved success to', file)
 	}
 }
 
@@ -38,17 +43,24 @@ export async function readJSON<T> (file: FileName, defaultData: T) : Promise<T> 
 
 // Tauri's write doesnt replace ALL the content of the file, so I do some weird stuff
 // with overwriting
-// If you write "h" to a file with "world" in it, the file will have "horld".
+// If you try to write just "h" to a file, and that file has "world" in it, the file will end up with "horld".
 export async function saveJSON<T> (file: FileName, data: T)  {
-	// I write a copy first
+	const alreadyThere = await exists(file, FILE_OPTS)
+	console.log('alreadyThere', alreadyThere)
+	const fileNameToWriteTo = alreadyThere ? '_' + file : file
+	console.log('fileNameToWriteTo', fileNameToWriteTo)
+
 	await writeTextFile({
-		path: '_' + file,
+		path: fileNameToWriteTo,
 		contents: JSON.stringify(data),
 	}, FILE_OPTS);
 
-	// Then delete the old one
-	await removeFile(file, FILE_OPTS)
+	if (alreadyThere) {
+		console.log('remove old')
+		await removeFile(file, FILE_OPTS)
 
-	// Then rename the copy to the real name
-	await renameFile('_' + file, file, FILE_OPTS)
+		// Then rename the copy to the real name
+		console.log('rename', fileNameToWriteTo, 'to', file)
+		await renameFile(fileNameToWriteTo, file, FILE_OPTS)
+	}
 }

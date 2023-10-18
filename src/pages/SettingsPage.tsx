@@ -1,10 +1,11 @@
-import {AppDatabase, DB_KEY_SETTINGS, useAppStore} from "../lib/store";
+import {useAppStore} from "../lib/store";
 import {ReactNode, useEffect, useRef, useState} from "react";
 import {open} from '@tauri-apps/api/dialog';
 import {Settings} from "../types/types";
 import TimeAgo from "../components/TimeAgo";
 import SVGIcon from "../components/SVGIcon";
 import Card from "../components/Card";
+import {saveSettingsJSONFile} from "../lib/settings";
 
 type VoiceOption = {
 	label: string
@@ -100,29 +101,25 @@ export default function SettingsPage () {
 			default: false,
 			lastSavedAt: new Date(),
 		}
-		setSettings(toSave)
-
-		AppDatabase.set(DB_KEY_SETTINGS, toSave).then(() => {
-			//console.log('saved settings', updated.settings)
-			// TODO: Maybe revert to old settings?
-		}).catch((err) => {
+		saveSettingsJSONFile(toSave).catch((err) => {
 			addError({
 				key: 'save_settings',
 				context: 'settings_save',
 				message: err.toString(),
 			})
+		}).then(() => {
+			setSettings(toSave)
 		})
 	}
 
 	return <div className={'pb-4'}>
-		<Card className={'flex justify-between items-center'}>
-			<h1 className={'text-xl'}>Settings</h1>
+		<div className={'px-5 pb-1 mt-4 flex justify-end text-gray-500'}>
 			<span className={'text-sm'}>
 				Last saved{" "}
-				{settings.lastSavedAt ? <><TimeAgo date={settings.lastSavedAt} /> ago</> : <em>never</em>}
+				{settings.lastSavedAt ? <><TimeAgo date={settings.lastSavedAt} /></> : <em>never</em>}
 			</span>
-		</Card>
-		<FormGroup label={`Path of Exile Client.txt Location`} description={'The log file is read to determine where you are.'}>
+		</div>
+		<FormGroup label={`Path of Exile Client.txt Location`} description={'The log file is checked to get your PoE location.'}>
 			<div className={'join w-full'}>
 				<input
 					type={'text'}
@@ -137,7 +134,7 @@ export default function SettingsPage () {
 						}, 500)
 					}}
 				/>
-				<button type={'button'} onClick={clickBrowseFiles} className={'btn btn-primary join-item'}>Browse Files</button>
+				<button type={'button'} onClick={clickBrowseFiles} className={'btn btn-primary join-item no-animation'}>Browse Files</button>
 			</div>
 		</FormGroup>
 
@@ -192,7 +189,7 @@ type FormGroupProps = {
 	description?: string
 }
 function FormGroup ({children, label, description}: FormGroupProps) {
-	return <Card className={'form-control mb-4'}>
+	return <Card className={'form-control mb-8 mt-0'}>
 		<label className="label">
 			<span className="label-text font-bold text-lg">{label}</span>
 		</label>

@@ -1,10 +1,6 @@
 import {create} from 'zustand'
 import {Reminder, Settings} from "../types/types";
-import {Store} from "tauri-plugin-store-api";
 import {PoEStatus} from "./poe";
-
-export const DB_KEY_SETTINGS = 'settings'
-export const DB_KEY_REMINDERS = 'reminders'
 
 export function defaultSettings () : Settings {
 	return {
@@ -25,10 +21,12 @@ export function defaultState () : AppState {
 		reminders: [],
 		page: 'main',
 		poeStatus: null,
+		playingId: null,
+		playing: false,
 	}
 }
 
-export type ErrorContext = 'reminders_add' | 'reminders_edit' | 'settings_save' | 'poe_status' | 'general'
+export type ErrorContext = 'reminders_add' | 'reminders_edit' | 'reminders_delete' | 'settings_save' | 'poe_status' | 'general'
 
 export type ErrorDef = {
 	key?: string
@@ -49,12 +47,12 @@ export interface AppState {
 	reminders: Reminder[]
 	errors: AppError[],
 	poeStatus: null | PoEStatus
+	playing: boolean
+	playingId: null | string // 'preview' or 'reminder_XXXX'
 }
 
 type Setters = {
-	addReminder: (r: Reminder) => void
 	setSettings: (s: Settings) => void
-	saveReminder: (r: Reminder) => void
 	setReminders: (rs: Reminder[]) => void
 	setPoEStatus: (p: null | PoEStatus) => void
 	addError: (e: ErrorDef) => void
@@ -62,39 +60,25 @@ type Setters = {
 	clearContextErrors: (e: ErrorContext) => void
 	setLoading: (l: boolean) => void
 	setPage: (p: PageKey) => void
+	setPlaying: (rid?: string) => void
+	clearPlaying: () => void
 }
 
 type ZustandStore = AppState & Setters
 
-const log = (config) => (set: ZustandSetPlaceHolderType, get: ZustandGetPlaceHolderType, api: ZustandAPIPlaceHolderType) =>
-	config(
-		(...args: any[]) => {
-			set(...args)
-			const updated = get() as AppState
-
-			// TODO: Make sure there's some pruning of certain fields that we don't need to save
-			// Like whether a reminder is currently playing or not, which isn't something that is saved to the db
-			// Derived fields like whether a reminder is currently in queue to be played is a derived field based
-			// on there being a playing reminder. It should not be saved.
-			// TODO: settingsStoreToStorage() and settingsStorageToStore() -- Maybe some less confusing names? Database instead of storage?
-			// TODO: Also maybe move this into a different function instead of middleware? saveReminders = update in store + save in db
-			AppDatabase.set(DB_KEY_REMINDERS, updated.reminders).then(() => {
-				console.log('saving reminders', updated.reminders)
-			})
-		},
-		get,
-		api
-	)
-
-export const AppDatabase = new Store(".settings.dat");
-
 type ZustandSetPlaceHolderType = any
-type ZustandGetPlaceHolderType = any
-type ZustandAPIPlaceHolderType = any
 
-export const useAppStore = create<ZustandStore>()(log((set: ZustandSetPlaceHolderType) => {
+export const useAppStore = create<ZustandStore>()((set: ZustandSetPlaceHolderType) => {
 	const state : ZustandStore = {
 		...defaultState(),
+		setPlaying: (rid?: string) => set(() : Partial<AppState> => ({
+			playing: true,
+			playingId: rid || null,
+		})),
+		clearPlaying: () => set(() => ({
+			playing: false,
+			playingId: null,
+		})),
 		setPage: (p: PageKey) => set(() => ({
 			page: p,
 		})),
@@ -107,27 +91,6 @@ export const useAppStore = create<ZustandStore>()(log((set: ZustandSetPlaceHolde
 				lastSavedAt: new Date(),
 			},
 		})),
-		saveReminder: (toSave: Reminder) => set((state: AppState) => {
-			return {
-				reminders: [
-					...state.reminders
-				].map((r) => {
-					if (r.id === toSave.id) {
-						return toSave
-					}
-
-					return r
-				})
-			}
-		}),
-		addReminder: (r: Reminder) => set((state: AppState) => {
-			return {
-				reminders: [
-					r,
-					...state.reminders,
-				]
-			}
-		}),
 		setReminders: (r: Reminder[]) => set(() => ({
 			reminders: r,
 		})),
@@ -177,6 +140,4 @@ export const useAppStore = create<ZustandStore>()(log((set: ZustandSetPlaceHolde
 		}),
 	}
 	return state
-}))
-
-
+})

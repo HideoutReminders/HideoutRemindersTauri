@@ -18,7 +18,8 @@
         "open": true
       },
       "dialog": {
-        "open": true
+        "open": true,
+        "confirm": true
       },
       "path": {
         "all": true
@@ -35,8 +36,6 @@
         "renameFile": true,
         "exists": true,
         "scope": [
-          "$APPDATA/settings.json",
-          "$APPDATA/reminders.json",
           "$APPDATA/",
           "$APPDATA/**"
         ]

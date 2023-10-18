@@ -1,6 +1,6 @@
 import {useEffect, useState} from "react";
 import {getRandom} from "../lib/helpers";
-import {promptToReminder} from "../lib/reminders";
+import {promptToReminder, saveRemindersJSONFile} from "../lib/reminders";
 import {useAppStore} from "../lib/store";
 
 const placeholders = [
@@ -13,7 +13,7 @@ const placeholders = [
 ]
 
 export default function CreateReminder () {
-	const {addReminder, addError, clearContextErrors} = useAppStore()
+	const {setReminders, reminders, addError, clearContextErrors} = useAppStore()
 	const [placeholder, setPlaceholder] = useState(getRandom<string>(placeholders))
 	const [text, setText] = useState('')
 
@@ -30,19 +30,28 @@ export default function CreateReminder () {
 	async function submit (e: React.FormEvent) {
 		e.preventDefault()
 		if (!text) {
-			console.log('no text')
 			return
 		}
 		if (!text.trim()) {
-			console.log('no trim')
 			return
 		}
 		try {
 			const r = promptToReminder(text)
-			console.log('adding ', r)
-			addReminder(r)
-			setText('')
-			clearContextErrors('reminders_add')
+			const updated = [
+				r,
+				...reminders,
+			]
+			saveRemindersJSONFile(updated).catch((err) => {
+				addError({
+					context: 'reminders_add',
+					key: 'save_json',
+					message: err.toString(),
+				})
+			}).then(() => {
+				setText('')
+				clearContextErrors('reminders_add')
+				setReminders(updated)
+			})
 		}
 		catch (ex) {
 			addError({
@@ -65,7 +74,7 @@ export default function CreateReminder () {
 					className={'join-item input placeholder-gray-500 focus:placeholder-gray-700 focus:outline-none input-bordered border-sm flex-1'}
 					placeholder={placeholder}
 				/>
-				<button type={'submit'} className={'join-item btn btn-primary'}>Add Reminder</button>
+				<button type={'submit'} className={'join-item btn btn-primary no-animation'}>Add Reminder</button>
 			</div>
 		</form>
 	</>

@@ -110,7 +110,7 @@ fn poe_status(client_txt_path: &str) -> String {
 		if let Some(found) = txt.find(zone_change_prefix) {
 				println!("Found at idx {found}");
 				let start = found + zone_change_prefix.len();
-				let slice = &txt[start..];
+				let slice = &txt[start..txt.len()-1]; // -1 gets rid of the period at the end of the line
 				poe_status.zone_name = format!("{slice}");
 				poe_status.zone_changed_at = date;
 				break;

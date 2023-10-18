@@ -1,11 +1,14 @@
 import {Reminder} from "../types/types";
 import {ReactNode, useEffect, useRef, useState} from "react";
 import {useAppStore} from "../lib/store";
-import {getReminderStatus, playReminder, promptToReminder} from "../lib/reminders";
+import {getReminderStatus, promptToReminder} from "../lib/reminders";
 import {formatDateTime} from "../lib/helpers";
 import TimeAgo from "./TimeAgo";
-import {PlayButton} from "../pages/SettingsPage";
-import HoldToConfirmButton from "./HoldToConfirmButton";
+import usePlayTTS from "../hooks/use-play-tts";
+import {useSaveReminder} from "../hooks/use-save-reminder";
+import { confirm } from '@tauri-apps/api/dialog';
+import {Simulate} from "react-dom/test-utils";
+import play = Simulate.play;
 
 type Props = {
 	reminder: Reminder
@@ -16,13 +19,14 @@ type Props = {
 const maskInputClasses = 'rounded bg-transparent py-1 px-2 border border-transparent bg-transparent focus:outline-none focus:border-slate-400 focus:bg-slate-900 transition-all '
 
 export default function ReminderListItem ({reminder}: Props) {
-	const {saveReminder, addError, settings} = useAppStore()
+	const {addError, playingId} = useAppStore()
 	const [open, setOpen] = useState(false)
-	const [playing, setPlaying] = useState(false)
 	const [text, setText] = useState(reminder.text)
 	const [playAfter, setPlayAfter] = useState(formatDateTime(reminder.playAfter))
 	const [saved, setSaved] = useState(false)
 	const hiddenDateRef = useRef<HTMLSpanElement>()
+	const {playReminder} = usePlayTTS()
+	const {updateReminder, deleteReminder} = useSaveReminder()
 
 	useEffect(() => {
 		setText(text)
@@ -34,66 +38,59 @@ export default function ReminderListItem ({reminder}: Props) {
 
 	const classes = ['reminder']
 
-	function submitText (e: React.FormEvent) {
+	async function _save (updated: Partial<Reminder>) {
+		await updateReminder(reminder.id, updated)
+		setSaved(true)
+		document.activeElement?.blur()
+		setTimeout(() => {
+			setSaved(false)
+		}, 1500)
+	}
+
+	async function submitText (e: React.FormEvent) {
 		e.preventDefault()
 		if (!text || !text.trim()) {
 			return
 		}
-		_saveReminder({
-			...reminder,
+		_save({
 			text,
 		})
 	}
 
 	function submitDate (e: React.FormEvent) {
 		e.preventDefault()
+		let prompted : Reminder
 		try {
-			const prompted = promptToReminder(text + ' ' + playAfter)
-			_saveReminder({
-				...reminder,
-				playAfter: prompted.playAfter,
-			})
+			prompted = promptToReminder(text + ' ' + playAfter)
 		}
 		catch (e) {
 			addError({
 				context: 'reminders_edit',
 				message: e.toString(),
 			})
+			return
 		}
+
+		_save({
+			playAfter: prompted.playAfter,
+		})
 	}
 
-	function _saveReminder (updated: Reminder) {
-		saveReminder(updated)
-		setSaved(true)
-		// @ts-ignore
-		document.activeElement.blur()
-		setTimeout(() => {
-			setSaved(false)
-		}, 1800)
-	}
 
 	async function clickPlayPreview () {
-		setPlaying(true)
-		try {
-			await playReminder(reminder, settings)
+		playReminder(reminder)
+	}
+
+	async function clickDelete () {
+		const dewit = await confirm('Delete reminder?')
+		if (!dewit) {
+			return
 		}
-		catch (ex) {
-			addError({
-				context: 'general',
-				key: 'reminder_preview_' + reminder.id,
-				message: ex.toString(),
-			})
-		}
-		finally {
-			setPlaying(false)
-		}
+		await deleteReminder(reminder.id)
 	}
 
 	let status = getReminderStatus(reminder)
 	let statusLine : ReactNode
-
-	status = 'done'
-	reminder.playedAt = new Date(Date.now() - 60000)
 
 	if (status === 'upcoming') {
 		// This content goes into a span that is hidden from view, but its width is used to set the container
@@ -101,14 +98,15 @@ export default function ReminderListItem ({reminder}: Props) {
 		// of input that matches the length of the content
 		// This substring/max/min stuff here is so that if you're editing the date and you erase the content, there's
 		// a minimum width
-		const minLenStr = 'Today @ 10:00pm'
+		const minLenStr = formatDateTime(reminder.playAfter)
 		let stretchSpanContent = (playAfter + minLenStr).substring(0, Math.max(playAfter.length, minLenStr.length))
-		stretchSpanContent = stretchSpanContent.split('').map(x => 'e').join('') // Uniform size by replacing all text with e
+		stretchSpanContent = playAfter.length > minLenStr ? playAfter : minLenStr
+		//stretchSpanContent = stretchSpanContent.split('').map(x => 'e').join('') // Uniform size by replacing all text with e
 
-		statusLine = <form onSubmit={submitDate} className={'inline flex items-center relative'}>
+		statusLine = <form onSubmit={submitDate} className={'inline flex items-center relative transition-all'}>
 			<input
 				value={playAfter}
-				className={maskInputClasses + ' z-50 absolute'}
+				className={maskInputClasses + ' w-full z-50 absolute transition-all'}
 				size={0}
 				type={'text'}
 				onFocus={() => {
@@ -121,7 +119,7 @@ export default function ReminderListItem ({reminder}: Props) {
 					setPlayAfter(e.target.value)
 				}}
 			/>
-			<span ref={hiddenDateRef} className={'relative z-1 opacity-0 py-1 px-2'}>
+			<span ref={hiddenDateRef} className={'relative z-1 opacity-0 py-1 px-2 border border-transparent'}>
 				{stretchSpanContent}
 			</span>
 		</form>
@@ -140,13 +138,37 @@ export default function ReminderListItem ({reminder}: Props) {
 	classes.push('mb-4 collapse collapse-arrow border border-base-300 bg-base-200 relative')
 	classes.push(open ? 'collapse-open' : 'collapse-close')
 
-	return <div className={classes.join(' ')} tabIndex={0}>
-		<div className={'collapse-title relative'}>
+	if (playingId === reminder.id) {
+		classes.push('playing')
+	}
+
+	return <div className={classes.join(' ')}>
+		<div className={'voice-bar'}>
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+			<div className={'bar'} />
+		</div>
+		<div className={'collapse-title relative z-10'}>
 			<div>
-				<form onSubmit={submitText}>
+				<form onSubmit={submitText} className={'pe-2'}>
 						<input
 							value={text}
-							className={maskInputClasses + ' text-bold text-xl w-full text-ellipsis'}
+							className={maskInputClasses + ' text-bold text-xl w-full text-ellipsis hover:bg-gray-900'}
 							type={'text'}
 							onChange={(e) => {
 								setText(e.target.value)
@@ -161,18 +183,24 @@ export default function ReminderListItem ({reminder}: Props) {
 			</div>
 			<div className={'flex items-center text-sm'}>
 				{statusLine}
-				{/*Put a play button here maybe?*/}
 				<span className={'ms-2 transition-all ' + (saved ? 'text-success' : 'text-transparent click-through')}>Saved!</span>
 			</div>
 		</div>
-		<div className={'collapse-content'}>
-			Created {formatDateTime(reminder.createdAt)}
-			{reminder.playedAt && <><br />Played at {formatDateTime(reminder.playedAt)}</>}
-			<br /><button onClick={() => clickPlayPreview()}>Preview</button>
-			<br />Delete it
+		<div className={'collapse-content flex justify-between items-center z-10 text-xs'}>
+			<div className={'flex-column items-center pl-2'}>
+				<button className={'btn btn-xs btn-neutral me-2'} onClick={() => clickPlayPreview()}>Preview</button>
+				<button className={'btn btn-xs btn-neutral me-2'} onClick={() => clickPlayPreview()}>Clone</button>
+				<button className={'btn btn-xs btn-neutral me-2'} onClick={() => clickPlayPreview()}>Repeat</button>
+				{/*<button className={'btn btn-xs btn-accent me-2'} onClick={() => clickPlayPreview()}>Clone</button>*/}
+				<button className={'btn btn-error btn-xs'} onClick={() => clickDelete()}>Delete</button>
+			</div>
+			<div className={'pr-12'}>
+				{reminder.playedAt && <><br />Played {formatDateTime(reminder.playedAt)},{" "}</>}
+				Created {formatDateTime(reminder.createdAt)}
+			</div>
 		</div>
 		{/*{position: "absolute", zIndex: 10, right: 0, top: 0, width: '50px', height: '100%', background: 'rgba(0, 0, 0, 0.25)'}*/}
-		<button className={'focus:outline-none absolute z-10 right-0 w-12 top-0 h-full bg-black bg-opacity-0 hover:bg-opacity-15'} onClick={() => {
+		<button className={`btn-reminder-collapse focus:outline-none absolute z-10 right-0 w-12 top-0 h-full`} onClick={() => {
 			setOpen(!open)
 		}}>
 		</button>

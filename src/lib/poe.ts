@@ -46,7 +46,6 @@ export async function getPoEClientStatus (clientTxtPath: string) : Promise<PoESt
 	try {
 		const response = JSON.parse(responseJSON) as (PoEClientTxtResponse | InvokeError)
 		validJSON = true
-		console.log('response', response)
 		if (response.success) {
 			const r = response as PoEClientTxtResponse
 			status = {
@@ -59,7 +58,6 @@ export async function getPoEClientStatus (clientTxtPath: string) : Promise<PoESt
 		}
 		else {
 			const r = response as InvokeError
-			console.log('r', r)
 			const e : AppError = {
 				key: 'poe_status',
 				message: r.message,
@@ -89,6 +87,13 @@ export type PoEPausing = {
 	reason: PoEPauseReason
 }
 export function isPoEPausingReminders (status: null | PoEStatus) : PoEPausing {
+/*
+	return {
+		pausing: true,
+		reason: 'in_unsafe_zone',
+	}
+*/
+
 	if (!status) {
 		return {
 			pausing: false,
