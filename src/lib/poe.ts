@@ -87,12 +87,14 @@ export type PoEPausing = {
 	reason: PoEPauseReason
 }
 export function isPoEPausingReminders (status: null | PoEStatus) : PoEPausing {
-/*
-	return {
+/*	return {
 		pausing: true,
 		reason: 'in_unsafe_zone',
+	}*/
+	return {
+		pausing: true,
+		reason: 'afk',
 	}
-*/
 
 	if (!status) {
 		return {

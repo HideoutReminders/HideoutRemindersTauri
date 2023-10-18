@@ -18,8 +18,8 @@ export function useSaveReminder () {
 		})
 
 		try {
-			await saveRemindersJSONFile(updatedReminders)
-			setReminders(updatedReminders)
+			const sorted = await saveRemindersJSONFile(updatedReminders)
+			setReminders(sorted)
 		}
 		catch (ex) {
 			addError({
@@ -36,8 +36,8 @@ export function useSaveReminder () {
 		].filter(x => x.id !== reminderId)
 
 		try {
-			await saveRemindersJSONFile(updatedReminders)
-			setReminders(updatedReminders)
+			const sorted = await saveRemindersJSONFile(updatedReminders)
+			setReminders(sorted)
 		}
 		catch (ex) {
 			addError({

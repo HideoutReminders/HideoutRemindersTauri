@@ -4,6 +4,7 @@ import {ReactNode} from "react";
 import TimeAgo from "./TimeAgo";
 import AlarmOffIcon from '@mui/icons-material/AlarmOff';
 import AlarmOnIcon from '@mui/icons-material/AlarmOn';
+import AlarmIcon from '@mui/icons-material/Alarm';
 import SpatialAudio from "@mui/icons-material/SpatialAudio";
 
 function Byline (text: string, updateAt: Date) {
@@ -11,7 +12,7 @@ function Byline (text: string, updateAt: Date) {
 }
 
 export default function PoEStatus () {
-	const {poeStatus, playing} = useAppStore()
+	const {poeStatus, playing, playingId, reminders} = useAppStore()
 	if (!poeStatus) {
 		return <div>?</div>
 	}
@@ -32,7 +33,7 @@ export default function PoEStatus () {
 		byline = Byline(`In ${poeStatus.zoneName}`, poeStatus.zoneChangedAt as Date)
 	}
 	else if(paused.reason === "stale_client_txt") {
-		byline = <>No activity since <TimeAgo date={poeStatus.mostRecentLineAt} /></>
+		byline = <>No PoE since <TimeAgo date={poeStatus.mostRecentLineAt} /></>
 	}
 	else if (paused.reason === 'no_zone') {
 		byline = `Can't find the zone name`
@@ -48,17 +49,20 @@ export default function PoEStatus () {
 	}
 	let title = paused.pausing ? 'Pausing reminders' : 'Reminders will play'
 	let titleClasses = paused.pausing ? 'text-warning' : 'text-success'
-	let icon = paused.pausing ? <AlarmOffIcon sx={iconSize} /> : <AlarmOnIcon sx={iconSize} />
+	let icon = paused.pausing ? <AlarmOffIcon sx={iconSize} /> : <AlarmIcon sx={iconSize} />
 
-	if (playing) {
-		iconColor = 'text-secondary'
-		title = 'Playing'
-		titleClasses = 'text-secondary'
-		icon = <SpatialAudio sx={iconSize} />
+	// Change the icon and text if we're playing a reminder
+	// We don't change it for playing previews off voices
+	if (playing && playingId) {
+		const r = reminders.find(x => x.id === playingId)
+		title = r ? r.text : 'Playing audio'
+		iconColor = 'text-success'
+		titleClasses = 'text-success'
+		icon = <AlarmOnIcon sx={iconSize} />
 	}
 
 
-	return <div className={'flex p-1 ps-3'}>
+	return <div className={'flex p-2 ps-3'}>
 		<div className={'me-2 text-lg flex items-center ' + iconColor}>
 			{icon}
 		</div>

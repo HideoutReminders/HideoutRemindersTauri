@@ -6,6 +6,7 @@ import TimeAgo from "../components/TimeAgo";
 import SVGIcon from "../components/SVGIcon";
 import Card from "../components/Card";
 import {saveSettingsJSONFile} from "../lib/settings";
+import usePlayTTS from "../hooks/use-play-tts";
 
 type VoiceOption = {
 	label: string
@@ -21,6 +22,8 @@ export default function SettingsPage () {
 	const volChangeRef = useRef<NodeJS.Timeout | null>(null)
 	const clientTxtChangeRef = useRef<NodeJS.Timeout | null>(null)
 	const clientTxtErrors = errors.some(x => x.context === 'poe_status')
+	const play = usePlayTTS()
+
 
 	useEffect(() => {
 		setVolume(settings.volume)
@@ -76,7 +79,11 @@ export default function SettingsPage () {
 	}
 
 	function previewVoice (idx: number) {
-		let utterance = new SpeechSynthesisUtterance();
+		play.playText('this is sample text', 'preview', {
+			...settings,
+			ttsVoiceIdx: idx,
+		})
+		/*let utterance = new SpeechSynthesisUtterance();
 
 		// Set the text and voice of the utterance
 		utterance.text = 'this is sample text';
@@ -84,7 +91,7 @@ export default function SettingsPage () {
 		utterance.volume = volume/100
 
 		// Speak the utterance
-		window.speechSynthesis.speak(utterance);
+		window.speechSynthesis.speak(utterance);*/
 	}
 
 	function clickTTSVoice (idx: number) {

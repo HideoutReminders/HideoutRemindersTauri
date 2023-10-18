@@ -79,7 +79,21 @@ export async function getReminders () : Promise<Reminder[]> {
 	return readJSON<Reminder[]>(REMINDERS_FILE, [])
 }
 
-export async function saveRemindersJSONFile (reminders: Reminder[]) {
+export async function saveRemindersJSONFile (reminders: Reminder[]) : Promise<Reminder[]> {
 	await ensureRemindersJSONFile()
-	return await saveJSON(REMINDERS_FILE, reminders)
+	const sorted = reminders.sort((a, b) => {
+		if (a.playedAt && b.playedAt) {
+			return a.playedAt > b.playedAt ? -1 : 1
+		}
+		if (a.playedAt && !b.playedAt) {
+			return 1
+		}
+		if (!a.playedAt && b.playedAt) {
+			return -1
+		}
+		return a.playAfter < b.playAfter ? -1 : 1
+	})
+
+	await saveJSON(REMINDERS_FILE, sorted)
+	return sorted
 }

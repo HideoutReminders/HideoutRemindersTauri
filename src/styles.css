@@ -130,3 +130,8 @@ body:before {
 .open .btn-reminder-collapse {
     background: rgba(0, 0, 0, 0.25);
 }
+
+.reminder:not(.played) + .played {
+    margin-top: 6rem;
+}
+

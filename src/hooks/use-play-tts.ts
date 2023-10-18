@@ -11,7 +11,7 @@ const queue : Play[] = []
 export default function usePlayTTS () {
 	const {settings, playing, setPlaying, clearPlaying} = useAppStore()
 
-	async function playText (text: string, id: string) {
+	async function playText (text: string, id: string, settings: Settings) {
 		return new Promise((res, rej) => {
 			function attemptPlay () {
 
@@ -42,7 +42,7 @@ export default function usePlayTTS () {
 	}
 
 	async function playReminder (r: Reminder) {
-		await playText(r.text, r.id)
+		await playText(r.text, r.id, settings)
 	}
 
 	return {

@@ -9,6 +9,9 @@ import {useEffect} from "react";
 import {getSettings} from "./lib/settings";
 import {getReminders} from "./lib/reminders";
 import {Reminder} from "./types/types";
+import {Simulate} from "react-dom/test-utils";
+import usePlayTTS from "./hooks/use-play-tts";
+import {useSaveReminder} from "./hooks/use-save-reminder";
 
 function App () {
 	const {
@@ -21,8 +24,11 @@ function App () {
 		setLoading,
 		reminders,
 		loading,
+		playingId,
 	} = useAppStore()
 	useUpdatePoEStatus()
+	const play = usePlayTTS()
+	const {updateReminder} = useSaveReminder()
 
 	useEffect(() => {
 		if (!loading) {
@@ -88,6 +94,41 @@ function App () {
 			console.warn('unmounted for some reason')
 		}
 	}, [])
+
+	useEffect(() => {
+		function playReminders () {
+			const now = new Date()
+			const nextToPlay = reminders.find((r) => {
+				if (r.playedAt) {
+					return false
+				}
+				if (r.playAfter > now) {
+					return false
+				}
+
+				return r.id !== playingId
+			})
+
+			if (!nextToPlay) {
+				return
+			}
+
+			const playedAt = new Date()
+			play.playReminder(nextToPlay).then(() => {
+				updateReminder(nextToPlay.id, {
+					playedAt,
+				}).then(() => {
+					console.log('played tts and saved it')
+				})
+			})
+		}
+
+		const interval = setInterval(playReminders, 1000)
+
+		return () => {
+			clearInterval(interval)
+		}
+	}, [reminders, playingId])
 
 	if (loading) {
 		return <div>

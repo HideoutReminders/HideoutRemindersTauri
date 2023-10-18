@@ -47,10 +47,10 @@ export default function CreateReminder () {
 					key: 'save_json',
 					message: err.toString(),
 				})
-			}).then(() => {
+			}).then((sorted) => {
 				setText('')
 				clearContextErrors('reminders_add')
-				setReminders(updated)
+				setReminders(sorted)
 			})
 		}
 		catch (ex) {

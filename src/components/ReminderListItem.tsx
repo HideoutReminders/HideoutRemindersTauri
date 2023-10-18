@@ -132,7 +132,7 @@ export default function ReminderListItem ({reminder}: Props) {
 	}
 	else if (status === 'done') {
 		statusLine = <div className={'ms-2'}>Played <TimeAgo date={reminder.playedAt as Date} /></div>
-		classes.push('played')
+		classes.push('played opacity-70')
 	}
 
 	classes.push('mb-4 collapse collapse-arrow border border-base-300 bg-base-200 relative')
