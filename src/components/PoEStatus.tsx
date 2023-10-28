@@ -1,36 +1,35 @@
 import {useAppStore} from "../lib/store";
-import {isPoEPausingReminders} from "../lib/poe";
+import {getPoEPausingStatus} from "../lib/poe";
 import {ReactNode} from "react";
 import TimeAgo from "./TimeAgo";
 import AlarmOffIcon from '@mui/icons-material/AlarmOff';
 import AlarmOnIcon from '@mui/icons-material/AlarmOn';
 import AlarmIcon from '@mui/icons-material/Alarm';
-import SpatialAudio from "@mui/icons-material/SpatialAudio";
 
 function Byline (text: string, updateAt: Date) {
-	return <>{text} <span class={'byline-updated-at'}><TimeAgo date={updateAt} /></span></>
+	return <>{text} <span className={'byline-updated-at'}><TimeAgo date={updateAt} /></span></>
 }
 
 export default function PoEStatus () {
-	const {poeStatus, playing, playingId, reminders} = useAppStore()
+	const {poeStatus, playing, playingId, reminders, settings} = useAppStore()
 	if (!poeStatus) {
-		return <div>?</div>
+		return <div></div>
 	}
 
-	const paused = isPoEPausingReminders(poeStatus)
+	const paused = getPoEPausingStatus(poeStatus, settings)
 	let byline: ReactNode
 	let bylineClasses = ''
 	let iconColor = paused.pausing ? 'text-warning' : 'text-success'
 
 	if (paused.reason === "afk") {
-		byline = Byline(`AFK in ${poeStatus.zoneName}`, poeStatus.afkAt as Date)
+		byline = Byline(`AFK in ${poeStatus.zoneName}`, poeStatus.mostRecentLineAt as Date)
 	}
 	else if (paused.reason === "in_safe_zone") {
-		byline = Byline(`Safe in ${poeStatus.zoneName}`, poeStatus.zoneChangedAt as Date)
+		byline = Byline(`Safe in ${poeStatus.zoneName}`, poeStatus.mostRecentLineAt as Date)
 	}
 	else if(paused.reason === "in_unsafe_zone") {
 		// TODO: Detect the right verb based on where you are. "Bossing", "Mapping", "Delving", "Heisting", etc
-		byline = Byline(`In ${poeStatus.zoneName}`, poeStatus.zoneChangedAt as Date)
+		byline = Byline(`In ${poeStatus.zoneName}`, poeStatus.mostRecentLineAt as Date)
 	}
 	else if(paused.reason === "stale_client_txt") {
 		byline = <>No PoE since <TimeAgo date={poeStatus.mostRecentLineAt} /></>

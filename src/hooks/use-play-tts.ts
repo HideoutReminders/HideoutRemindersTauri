@@ -1,19 +1,13 @@
 import {useAppStore} from "../lib/store";
 import {Reminder, Settings} from "../types/types";
-
-type Play = {
-	text: string
-	id: string
-}
-
-const queue : Play[] = []
+import {getVoices} from "../lib/helpers";
 
 export default function usePlayTTS () {
-	const {settings, playing, setPlaying, clearPlaying} = useAppStore()
+	const {playing, setPlaying, clearPlaying} = useAppStore()
 
-	async function playText (text: string, id: string, settings: Settings) {
+	async function playText (text: string, id: string | undefined, settings: Settings) : Promise<void> {
 		return new Promise((res, rej) => {
-			function attemptPlay () {
+			async function attemptPlay () {
 
 				// TODO: Add the item to the queue and then play things from the queue
 				if (playing) {
@@ -23,8 +17,9 @@ export default function usePlayTTS () {
 					return
 				}
 				const utterThis = new SpeechSynthesisUtterance(text);
-				const voices = window.speechSynthesis.getVoices()
-				utterThis.voice = voices[settings.ttsVoiceIdx]
+				const voices = await getVoices()
+				const voice = voices[settings.ttsVoiceIdx]
+				utterThis.voice = voice
 				utterThis.volume = settings.volume / 100
 				utterThis.onend = () => {
 					clearPlaying()
@@ -41,7 +36,7 @@ export default function usePlayTTS () {
 		})
 	}
 
-	async function playReminder (r: Reminder) {
+	async function playReminder (r: Reminder, settings: Settings) {
 		await playText(r.text, r.id, settings)
 	}
 

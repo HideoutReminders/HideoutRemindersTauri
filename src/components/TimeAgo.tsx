@@ -15,7 +15,7 @@ export default function TimeAgo ({date}: {date: Date}) {
 				setInner('just now')
 			}
 			else if (diffS < 60) {
-				setInner('<1m')
+				setInner('<1m ago')
 			}
 			else if (diffS < (60 * 60)) {
 				setInner(Math.round(diffS / 60) + 'm ago')

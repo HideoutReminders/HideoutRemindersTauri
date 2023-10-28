@@ -5,6 +5,7 @@ export type Settings = {
 	poeClientTxtPath: string
 	lastSavedAt: null | Date
 	default: boolean
+	safeZoneNames: string[]
 }
 
 export type Reminder = {

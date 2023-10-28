@@ -1,6 +1,7 @@
 import * as chrono from 'chrono-node'
-import {Reminder} from "../types/types";
+import {Reminder, Settings} from "../types/types";
 import {ensureJSONFile, readJSON, REMINDERS_FILE, saveJSON} from "./files";
+import {isPoEStatusPausing, PoEStatus} from "./poe";
 
 let idCount = 0
 export function promptToReminder (prompt: string) : Reminder {
@@ -10,7 +11,7 @@ export function promptToReminder (prompt: string) : Reminder {
 	let date : Date
 	let textWithoutDate : string
 	if (!parsed.length) {
-		throw new Error('No parsed date found')
+		throw new Error(`Couldn't find a time. Try adding "in 10m" or "Tuesday at 1pm".`)
 	}
 	else {
 		const first = parsed[0]
@@ -60,14 +61,21 @@ export type ReminderStatus = 'upcoming' |
 	'queued' | // It needs to play but another one is currently playing
 	'playing' |
 	'done'
-export function getReminderStatus (r: Reminder, currentlyPlaying?: string) : ReminderStatus {
-	if (currentlyPlaying && currentlyPlaying === r.id) {
+export function getReminderStatus (r: Reminder, playingId: string | null, poeStatus: null | PoEStatus, settings: Settings) : ReminderStatus {
+	if (playingId && playingId === r.id) {
 		return 'playing'
 	}
 	if (r.playedAt) {
 		return 'done'
 	}
-	return currentlyPlaying ? 'queued' : 'upcoming'
+	if (r.playAfter > new Date()) {
+		return 'upcoming'
+	}
+	if (playingId) {
+		return 'queued'
+	}
+	const pausing = isPoEStatusPausing(poeStatus, settings)
+	return pausing ? 'queued' : 'upcoming'
 }
 
 export async function ensureRemindersJSONFile () {
@@ -76,7 +84,16 @@ export async function ensureRemindersJSONFile () {
 
 export async function getReminders () : Promise<Reminder[]> {
 	await ensureRemindersJSONFile();
-	return readJSON<Reminder[]>(REMINDERS_FILE, [])
+	const rows = await readJSON<Reminder[]>(REMINDERS_FILE, [])
+	return rows.map((r: any) : Reminder => {
+		return {
+			id: r.id,
+			playedAt: r.playedAt ? new Date(r.playedAt) : null,
+			playAfter: new Date(r.playAfter),
+			text: r.text,
+			createdAt: new Date(r.createdAt)
+		}
+	})
 }
 
 export async function saveRemindersJSONFile (reminders: Reminder[]) : Promise<Reminder[]> {

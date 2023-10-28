@@ -1,7 +1,8 @@
 import {useEffect, useState} from "react";
 import {getRandom} from "../lib/helpers";
-import {promptToReminder, saveRemindersJSONFile} from "../lib/reminders";
+import {promptToReminder} from "../lib/reminders";
 import {useAppStore} from "../lib/store";
+import {usePlayAudio} from "../hooks/use-play-audio";
 
 const placeholders = [
 	'do the dishes in 10 minutes',
@@ -13,9 +14,10 @@ const placeholders = [
 ]
 
 export default function CreateReminder () {
-	const {setReminders, reminders, addError, clearContextErrors} = useAppStore()
+	const {addReminder, addError, clearContextErrors} = useAppStore()
 	const [placeholder, setPlaceholder] = useState(getRandom<string>(placeholders))
 	const [text, setText] = useState('')
+	const {play} = usePlayAudio()
 
 	useEffect(() => {
 		let interval = setInterval(() => {
@@ -37,26 +39,17 @@ export default function CreateReminder () {
 		}
 		try {
 			const r = promptToReminder(text)
-			const updated = [
-				r,
-				...reminders,
-			]
-			saveRemindersJSONFile(updated).catch((err) => {
-				addError({
-					context: 'reminders_add',
-					key: 'save_json',
-					message: err.toString(),
-				})
-			}).then((sorted) => {
-				setText('')
-				clearContextErrors('reminders_add')
-				setReminders(sorted)
-			})
+			await addReminder(r)
+			setText('')
+			clearContextErrors('reminders_add')
+			play('success')
 		}
 		catch (ex) {
+			play('error')
 			addError({
 				context: 'reminders_add',
-				message: `${ex}`
+				error: ex,
+				type: 'unknown',
 			})
 			throw ex
 		}

@@ -1,6 +1,6 @@
 import {useEffect} from "react";
-import {getPoEClientStatus} from "../lib/poe";
-import {AppError, useAppStore} from "../lib/store";
+import {getPoEClientStatus, poeStatusesEq} from "../lib/poe";
+import {useAppStore} from "../lib/store";
 
 export default function useUpdatePoEStatus () {
 	const {
@@ -9,6 +9,7 @@ export default function useUpdatePoEStatus () {
 		addError,
 		setPage,
 		setPoEStatus,
+		get,
 		clearContextErrors,
 	} = useAppStore()
 
@@ -26,6 +27,7 @@ export default function useUpdatePoEStatus () {
 				}
 				else {
 					addError({
+						type: 'known',
 						context: 'poe_status',
 						key: 'no_client_txt',
 						message: 'Missing the Client.txt location in settings'
@@ -35,25 +37,24 @@ export default function useUpdatePoEStatus () {
 				return
 			}
 			getPoEClientStatus(settings.poeClientTxtPath).then((stat) => {
-				setPoEStatus(stat)
-				clearContextErrors('poe_status')
-			}).catch((err: AppError | unknown) => {
-				setPoEStatus(null)
-				if (err && typeof err === 'object' && err.context) {
-					addError(err as AppError)
+				const {poeStatus} = get()
+				if (poeStatusesEq(poeStatus, stat)) {
 					return
 				}
+				setPoEStatus(stat)
+				clearContextErrors('poe_status')
+			}).catch((err) => {
 				addError({
+					type: 'unknown',
 					context: 'poe_status',
-					key: 'poe_status',
-					message: `${err}`,
+					error: err,
 				})
 			})
 		}
 
 		let interval = setInterval(() => {
 			readClientTxt()
-		}, 10000)
+		}, 1000)
 		readClientTxt()
 
 		return () => {

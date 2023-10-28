@@ -1,102 +1,92 @@
 import "./styles.css";
 import MainPage from "./pages/MainPage";
 import SettingsPage from "./pages/SettingsPage";
-import {AppError, defaultSettings, PageKey, useAppStore} from './lib/store'
+import {AppError, PageKey, useAppStore} from './lib/store'
 import SVGIcon from "./components/SVGIcon";
 import useUpdatePoEStatus from "./hooks/use-update-poe-status";
 import PoEStatus from "./components/PoEStatus";
-import {useEffect} from "react";
-import {getSettings} from "./lib/settings";
-import {getReminders} from "./lib/reminders";
-import {Reminder} from "./types/types";
-import {Simulate} from "react-dom/test-utils";
+import {ReactNode, useEffect} from "react";
 import usePlayTTS from "./hooks/use-play-tts";
-import {useSaveReminder} from "./hooks/use-save-reminder";
+import SettingsIcon from '@mui/icons-material/Settings';
+
+import {isPoEStatusPausing} from "./lib/poe";
+import {getVoices} from "./lib/helpers";
 
 function App () {
+	const store = useAppStore()
 	const {
 		errors,
 		page,
 		removeError,
 		addError,
-		setSettings,
-		setReminders,
-		setLoading,
 		reminders,
 		loading,
 		playingId,
-	} = useAppStore()
+		saveReminder,
+		openReminderId,
+		closeReminder,
+		settings,
+		get,
+	} = store
 	useUpdatePoEStatus()
 	const play = usePlayTTS()
-	const {updateReminder} = useSaveReminder()
 
 	useEffect(() => {
 		if (!loading) {
 			return
 		}
-		console.log('reminders have changed! there are now', reminders.length)
 	}, [loading, reminders])
 
 	useEffect(() => {
-		Promise.all([
-			getSettings().then((s) => {
-				if (s && s.default) {
-					addError({
-						key: 'settings_defaults',
-						context: 'general',
-						message: 'Why come defaults are saved in our db',
-					})
-					return 'whyy is default saved'
-				}
-				// @ts-ignore
-				if (s && s.value && typeof s.value === 'number') {
-					addError({
-						context: 'general',
-						message: 'wtf is this settings thing'
-					})
-					return 'got that old one'
-				}
-				if (s && s.hasOwnProperty('volume')) {
-					setSettings(s)
-					return 'loaded settings from db'
-				}
-				else {
-					setSettings(defaultSettings())
-					return 'default settings'
-				}
-			}),
-			getReminders().then((rs) => {
-				console.log('reminders from db', rs)
-				if (rs) {
-					// TODO: Probably make a reminderFromDatabase mapping function
-					setReminders(rs.map((r: any) : Reminder => {
-						return {
-							id: r.id,
-							playedAt: r.playedAt ? new Date(r.playedAt) : null,
-							playAfter: new Date(r.playAfter),
-							text: r.text,
-							createdAt: new Date(r.createdAt)
-						}
-					}))
-					return 'loaded reminders'
-				}
-
-				return 'blank reminders from db'
-			})
-		]).then((results) => {
-			console.log('results from loading', results)
-			setTimeout(() => {
-				setLoading(false)
-			}, 250)
+		getVoices().then(voices => {
+			console.log('Loaded ' + voices.length + ' voices.')
 		})
-
 		return () => {
 			console.warn('unmounted for some reason')
 		}
 	}, [])
 
 	useEffect(() => {
+		if (!settings.safeZoneNames || !settings.safeZoneNames.length) {
+			addError({
+				key: 'no_safe_zones',
+				message: 'You have no safe zones in your settings',
+				type: 'known',
+				context: 'general',
+			})
+		}
+		else {
+			removeError('no_safe_zones')
+		}
+	}, [(settings.safeZoneNames||'').length])
+
+	useEffect(() => {
+		if (loading) {
+			console.log('do not play while loading')
+			return
+		}
+
+		let running = true
+		let timeout : NodeJS.Timeout
+
+		function repeat () {
+			if (!running) {
+				return
+			}
+
+			clearTimeout(timeout)
+			timeout = setTimeout(playReminders, 1000)
+		}
+
 		function playReminders () {
+			const {reminders, poeStatus, settings} = get()
+			const paused = isPoEStatusPausing(poeStatus, settings)
+
+			if (paused) {
+				repeat()
+				return
+			}
+
 			const now = new Date()
 			const nextToPlay = reminders.find((r) => {
 				if (r.playedAt) {
@@ -110,25 +100,54 @@ function App () {
 			})
 
 			if (!nextToPlay) {
+				repeat()
 				return
 			}
 
 			const playedAt = new Date()
-			play.playReminder(nextToPlay).then(() => {
-				updateReminder(nextToPlay.id, {
+
+			// Check how long ago this reminder should have played. If it's more than a few seconds,
+			// it means we're only playing it now cause they moved into a safe zone. If that's the case
+			// we add a few seconds of delay to account for the loading screen
+			const diff = playedAt.getTime() - nextToPlay.playAfter.getTime()
+			const loadingScreenTime = 3000
+			const shouldHavePlayedBuffer = 5000
+			const delay = diff >= shouldHavePlayedBuffer ? loadingScreenTime : 0
+
+			setTimeout(() => {
+				console.log('next to play', nextToPlay.id, nextToPlay.playedAt, nextToPlay.text)
+				play.playReminder(nextToPlay, settings).then(() => {
+				})
+				if (openReminderId === nextToPlay.id) {
+					closeReminder()
+				}
+				saveReminder(nextToPlay.id, {
 					playedAt,
 				}).then(() => {
-					console.log('played tts and saved it')
+				}).catch((err) => {
+					// If there was an error saving it, we revert it to unplayed
+					saveReminder(nextToPlay.id, {
+						playedAt: null
+					})
+					addError({
+						context: 'reminders_play',
+						error: err,
+						type: 'unknown'
+					})
+				}).finally(() => {
+					console.log('don playing, check the next in 10s')
+					repeat()
 				})
-			})
+			}, delay)
 		}
 
-		const interval = setInterval(playReminders, 1000)
+		playReminders()
 
 		return () => {
-			clearInterval(interval)
+			clearInterval(timeout)
+			running = false
 		}
-	}, [reminders, playingId])
+	}, [loading])
 
 	if (loading) {
 		return <div>
@@ -150,7 +169,7 @@ function App () {
 					page={'main'}
 				/>
 				<NavItem
-					label={'Settings'}
+					label={<SettingsIcon />}
 					page={'settings'}
 				/>
 			</ul>
@@ -185,7 +204,7 @@ function App () {
 	</>
 }
 
-function NavItem (props: {label: string, page: PageKey}) {
+function NavItem (props: {label: ReactNode, page: PageKey}) {
 	const {page, setPage} = useAppStore()
 	const active = props.page === page
 	const activeClasses = 'active'

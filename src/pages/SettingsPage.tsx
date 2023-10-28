@@ -5,25 +5,33 @@ import {Settings} from "../types/types";
 import TimeAgo from "../components/TimeAgo";
 import SVGIcon from "../components/SVGIcon";
 import Card from "../components/Card";
-import {saveSettingsJSONFile} from "../lib/settings";
 import usePlayTTS from "../hooks/use-play-tts";
+import {getVoices} from "../lib/helpers";
+import {POE_CLIENT_TXT_DIRS, POE_SAFE_ZONES} from "../lib/poe";
 
 type VoiceOption = {
 	label: string
 	value: number
 }
 
+const sampleText = 'this is some sample text'
 export default function SettingsPage () {
-	const {settings, setSettings, addError, errors} = useAppStore()
+	const appStore = useAppStore()
+	const {settings, saveSettings, errors, get} = appStore
 	const [volume, setVolume] = useState<number>(settings.volume)
+	const [safeZones, setSafeZones] = useState<string>('')
 	const [clientTxt, setClientTxt] = useState<string | undefined>(settings.poeClientTxtPath)
 	const [ttsVoice, setTTSVoice] = useState<number>(settings.ttsVoiceIdx)
 	const [voices, setVoices] = useState<VoiceOption[]>([])
 	const volChangeRef = useRef<NodeJS.Timeout | null>(null)
+	const safeZonesRef = useRef<NodeJS.Timeout | null>(null)
 	const clientTxtChangeRef = useRef<NodeJS.Timeout | null>(null)
 	const clientTxtErrors = errors.some(x => x.context === 'poe_status')
 	const play = usePlayTTS()
 
+	useEffect(() => {
+		setSafeZones((settings.safeZoneNames || []).join('\n'))
+	}, [`${settings.safeZoneNames}`])
 
 	useEffect(() => {
 		setVolume(settings.volume)
@@ -38,28 +46,21 @@ export default function SettingsPage () {
 	}, [settings.ttsVoiceIdx])
 
 	useEffect(() => {
-		function onVoicesChanged () {
-			const voices = speechSynthesis.getVoices();
-			console.log('got voices', voices)
+		getVoices().then((voices) => {
+			console.log('voices', voices)
 			setVoices(voices.map((v, idx) => {
 				return {
 					label: v.name + ' (' + v.lang + ')' + (v.default ? ' DEFAULT' : ''),
 					value: idx,
 				}
 			}))
-		}
-		speechSynthesis.onvoiceschanged = onVoicesChanged
-		onVoicesChanged()
-
-		return () => {
-			speechSynthesis.onvoiceschanged = null
-		}
+		})
 	}, [])
 
 	async function clickBrowseFiles () {
 		const selected = await open({
 			multiple: false,
-			defaultPath: 'C:\\Program Files (x86)\\Steam\\steamapps\\common\\Path of Exile\\logs',
+			defaultPath: POE_CLIENT_TXT_DIRS[0],
 			filters: [{
 				name: 'Client Txt',
 				extensions: ['txt']
@@ -72,55 +73,38 @@ export default function SettingsPage () {
 	}
 
 	function saveClientTxt (newTxt: string) {
-		saveSettings({
-			...settings,
+		updateSettings({
 			poeClientTxtPath: newTxt,
 		})
 	}
 
 	function previewVoice (idx: number) {
-		play.playText('this is sample text', 'preview', {
+		play.playText(sampleText, undefined, {
 			...settings,
 			ttsVoiceIdx: idx,
 		})
-		/*let utterance = new SpeechSynthesisUtterance();
-
-		// Set the text and voice of the utterance
-		utterance.text = 'this is sample text';
-		utterance.voice = window.speechSynthesis.getVoices()[idx];
-		utterance.volume = volume/100
-
-		// Speak the utterance
-		window.speechSynthesis.speak(utterance);*/
 	}
 
 	function clickTTSVoice (idx: number) {
 		setTTSVoice(idx)
-		saveSettings({
-			...settings,
+		updateSettings({
 			ttsVoiceIdx: idx,
 		})
 	}
 
-	async function saveSettings (newSettings: Settings) {
+	async function updateSettings (updates: Partial<Settings>) {
+		const {settings} = get()
 		const toSave : Settings = {
-			...newSettings,
+			...settings,
+			...updates,
 			default: false,
 			lastSavedAt: new Date(),
 		}
-		saveSettingsJSONFile(toSave).catch((err) => {
-			addError({
-				key: 'save_settings',
-				context: 'settings_save',
-				message: err.toString(),
-			})
-		}).then(() => {
-			setSettings(toSave)
-		})
+		saveSettings(toSave)
 	}
 
-	return <div className={'pb-4'}>
-		<div className={'px-5 pb-1 mt-4 flex justify-end text-gray-500'}>
+	return <div className={'pb-4 relative'}>
+		<div className={'px-5 pb-1 mt-4 top-0 bg-black flex justify-end text-gray-500 sticky'}>
 			<span className={'text-sm'}>
 				Last saved{" "}
 				{settings.lastSavedAt ? <><TimeAgo date={settings.lastSavedAt} /></> : <em>never</em>}
@@ -159,8 +143,7 @@ export default function SettingsPage () {
 						const vol = parseInt(e.target.value)
 						setVolume(vol)
 						volChangeRef.current = setTimeout(() => {
-							saveSettings({
-								...settings,
+							updateSettings({
 								volume: vol,
 							})
 						}, 100)
@@ -186,6 +169,44 @@ export default function SettingsPage () {
 				</div>
 			})}
 		</FormGroup>
+		<FormGroup
+			label={'Safe Zones'}
+			description={'One per line'}
+			labelExtra={<button
+				type={'button'}
+				onClick={() => {
+					console.log('save to wahtver')
+					updateSettings({
+						safeZoneNames: POE_SAFE_ZONES,
+					})
+				}}
+				className={'btn btn-neutral btn-sm'}>
+					Restore Defaults
+				</button>
+			}
+		>
+			<textarea className={'textarea textarea-bordered w-full h-64'} value={safeZones} onChange={(e) => {
+				if (safeZonesRef.current !== null) {
+					clearTimeout(safeZonesRef.current as NodeJS.Timeout)
+				}
+				setSafeZones(e.target.value)
+				safeZonesRef.current = setTimeout(() => {
+					const zoneLines = e.target.value.split('\n')
+					const zones = zoneLines.map((x, idx) => {
+						if (idx === zoneLines.length - 1) {
+							return x
+						}
+						return x.trim()
+					})
+					updateSettings({
+						...settings,
+						safeZoneNames: zones,
+					})
+					setSafeZones(zones.join('\n'))
+				}, 500)}
+			}>
+			</textarea>
+		</FormGroup>
 	</div>
 }
 
@@ -193,13 +214,17 @@ export default function SettingsPage () {
 type FormGroupProps = {
 	children: ReactNode,
 	label: string
+	labelExtra?: ReactNode
 	description?: string
 }
-function FormGroup ({children, label, description}: FormGroupProps) {
+function FormGroup ({children, label, labelExtra, description}: FormGroupProps) {
 	return <Card className={'form-control mb-8 mt-0'}>
-		<label className="label">
-			<span className="label-text font-bold text-lg">{label}</span>
-		</label>
+		<div className={' ' + (labelExtra ? 'flex items-center justify-between' : 'content-start')}>
+			<label className="label">
+				<span className="label-text font-bold text-lg">{label}</span>
+			</label>
+			{labelExtra && labelExtra}
+		</div>
 		<div>
 			{children}
 		</div>

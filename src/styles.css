@@ -117,7 +117,7 @@ body:before {
     animation: greenGlow 500ms infinite;
 }
 
-.status-byline .byline-updated-at .time-ago {
+.status-byline .byline-updated-at {
     font-size: 0.8em;
     opacity: 0.7;
 }

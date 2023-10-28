@@ -14,6 +14,8 @@ struct PoEClientStatus {
 	zone_changed_at: String,
 	most_recent_line_at: String,
 	success: bool,
+	reminder_prompt: String,
+	reminder_at: String,
 }
 
 #[derive(Serialize)]
@@ -47,14 +49,12 @@ fn remind(text: &str, at: &str) -> String {
 fn poe_status(client_txt_path: &str) -> String {
 	let date_len = "2023/10/14 03:08:35".len();
 	let zone_change_prefix = "] : You have entered ";
-	println!("client_txt_path: {client_txt_path}");
 
 	let fp: &str = client_txt_path;
 	if fp == "" {
 		return error_res(String::from("No client txt path provided"));
 	}
 
-	println!("path: {fp}");
   let file = match File::open(fp) {
     Err(why) => return error_res(format!("Could not open file: {}", why)),
     Ok(file) => file,
@@ -68,13 +68,15 @@ fn poe_status(client_txt_path: &str) -> String {
 		afk: false,
 		most_recent_line_at: String::from(""),
 		success: true,
+		reminder_at: String::from(""),
+		reminder_prompt: String::from(""),
 	};
 
 	for line in rev_lines {
-		println!("{num} {:?}", line);
 
 		num = num + 1;
-		if num >= 1000 {
+		// TODO: Maybe make this a setting? My client.txt got spammed by an error uh oh happened
+		if num >= 50000 {
 			println!("Stopped searching after {num} lines");
 			break;
 		}
@@ -92,6 +94,8 @@ fn poe_status(client_txt_path: &str) -> String {
 			continue
 		}
 
+		// Every line in the Client.txt starts with a date, so if the line is too short this probably
+		// not a Client.txt file
 		if txt.len() < date_len {
 			return error_res(String::from("That doesn't look like a PoE client.txt file."));
 		}
@@ -105,10 +109,8 @@ fn poe_status(client_txt_path: &str) -> String {
 		}
 
 		let sans_date = txt[date_len..].to_string();
-		println!("sans_date {sans_date}");
 
 		if let Some(found) = txt.find(zone_change_prefix) {
-				println!("Found at idx {found}");
 				let start = found + zone_change_prefix.len();
 				let slice = &txt[start..txt.len()-1]; // -1 gets rid of the period at the end of the line
 				poe_status.zone_name = format!("{slice}");
@@ -116,11 +118,20 @@ fn poe_status(client_txt_path: &str) -> String {
 				break;
 		}
 		else {
-			println!("No zone change found");
+			//println!("No zone change found");
 			// TODO: Look for a line saying you're AFK or not afk
 			continue
 		}
 	}
+
+	if num <= 1 {
+			return error_res(String::from("Could not find any lines in Client.txt"));
+	}
+
+	if poe_status.most_recent_line_at == "" {
+		return error_res(String::from("Could not find any dates in Client.txt"));
+	}
+
 	let err = error_res(String::from("Could not serialize JSON"));
 	let j = serde_json::to_string(&poe_status).expect(&err);
   format!("{}", j)
@@ -129,6 +140,13 @@ fn poe_status(client_txt_path: &str) -> String {
 
 fn main() {
     tauri::Builder::default()
+		    .on_window_event(|event| match event.event() {
+		      tauri::WindowEvent::CloseRequested { api, .. } => {
+		        event.window().hide().unwrap();
+		        api.prevent_close();
+		      }
+		      _ => {}
+		    })
         .plugin(tauri_plugin_store::Builder::default().build())
         .invoke_handler(tauri::generate_handler![
             greet,
