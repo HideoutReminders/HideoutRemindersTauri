@@ -7,7 +7,7 @@ import ReminderListItem from "../components/ReminderListItem";
 export default function MainPage () {
 	const {computed, reminders, playingId, deleteReminders} = useAppStore()
 	const played = reminders.filter(x => !!x.playedAt)
-	const toPurge = played.filter(x => x.playedAt < new Date(Date.now() - 60000))
+	const toPurge = played.filter(x => x.playedAt! < new Date(Date.now() - 60000))
 
 
 	async function clickDeleteReminders () {

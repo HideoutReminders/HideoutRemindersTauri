@@ -6,8 +6,7 @@ import {formatDateTime} from "../lib/helpers";
 import TimeAgo from "./TimeAgo";
 import usePlayTTS from "../hooks/use-play-tts";
 import {confirm} from '@tauri-apps/api/dialog';
-import {Simulate} from "react-dom/test-utils";
-import play = Simulate.play;
+
 
 type Props = {
 	reminder: Reminder
@@ -166,7 +165,7 @@ export default function ReminderListItem ({reminder, showPastHeader}: Props) {
 		statusLine = <div className={'ms-2'}>Queued since {formatDateTime(reminder.playAfter)}</div>
 	}
 	else if (status === 'done') {
-		const playedAgo = Date.now() - reminder.playedAt?.getTime()
+		const playedAgo = Date.now() - reminder.playedAt!.getTime()
 		const showPostpone = playedAgo < (1000 * 60 * 5) // Only show this button if the reminder was played in the last X minutes
 		statusLine = <div className={'ms-2'}>
 			Played <TimeAgo date={reminder.playedAt as Date} />
@@ -254,7 +253,7 @@ export default function ReminderListItem ({reminder, showPastHeader}: Props) {
 					<button className={'btn btn-error btn-xs'} onClick={() => clickDelete()}>Delete</button>
 				</div>
 				<div className={'pr-12'}>
-					{reminder.playedAt && <><br />Played {formatDateTime(reminder.playedAt)},{" "}</>}
+					{reminder.playedAt && <>Played {formatDateTime(reminder.playedAt)},{" "}</>}
 					Created {formatDateTime(reminder.createdAt)}
 				</div>
 			</div>
