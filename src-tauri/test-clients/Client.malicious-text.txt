@@ -1,0 +1,6 @@
+2023/10/20 01:59:14 424053000 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:18 424057390 cffb0719 [INFO Client 25996] The Maven: Tight tethers!
+2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.
+2023/10/20 02:00:07 424106328 32758d39 [INFO Client 25996] [SHADER] Delay: ON
+2023/10/20 13:02:36 463852250 cffb0719 [INFO Client 27688] @From some_user: ] : You have entered Stupid Place Hideout.
+2023/10/21 02:00:06 424105234 32758d39 [INFO Client 25996] [SHADER] Delay: OFF

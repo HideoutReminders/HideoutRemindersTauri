@@ -1,0 +1,49 @@
+2023/10/20 01:59:14 424053000 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:14 424053031 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:14 424053031 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:14 424053031 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:14 424053031 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:14 424053031 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:14 424053031 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:14 424053046 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:14 424053046 6ad7b316 [DEBUG Client 25996] ALTERNATE TREE JEWEL: Applying modifications for jewel with alternate tree version = 3, seed = 5072, and keystone selection = 1
+2023/10/20 01:59:14 424053281 cffb0719 [INFO Client 25996] : You have entered Moon Temple.
+2023/10/20 01:59:15 424053828 32758d39 [INFO Client 25996] [SHADER] Delay: ON
+2023/10/20 01:59:18 424057390 cffb0719 [INFO Client 25996] The Maven: Tight tethers!
+2023/10/20 01:59:25 424064421 cffb0719 [INFO Client 25996] The Maven: Time bends to my will!
+2023/10/20 01:59:32 424071500 cffb0719 [INFO Client 25996] The Maven: Be healed, and fight on.
+2023/10/20 01:59:35 424073796 cffb0719 [INFO Client 25996] Baran, the Crusader: Sinners must be punished!
+2023/10/20 01:59:39 424078140 cffb0719 [INFO Client 25996] Baran, the Crusader: Heretic!
+2023/10/20 01:59:39 424078546 cffb0719 [INFO Client 25996] The Maven: Tight tethers!
+2023/10/20 01:59:47 424085703 cffb0719 [INFO Client 25996] The Maven: Temporal tears!
+2023/10/20 01:59:51 424089828 cffb0719 [INFO Client 25996] Baran, the Crusader: Repent!
+2023/10/20 01:59:54 424092890 cffb0719 [INFO Client 25996] The Maven: Grip of the infinite!
+2023/10/20 01:59:57 424096203 cffb0719 [INFO Client 25996] Baran, the Crusader: Kirac... sent you? You must keep him out of the Atlas... I cannot be saved... he will find only his own doom, endlessly pursuing my rescue... he will end up... like me...
+
+Tell Zana... she was right... to seal us away... Sirus must never... be...
+2023/10/20 02:00:06 424105218 88a904a0 [DEBUG Client 25996] Got Instance Details from login server
+2023/10/20 02:00:06 424105234 84a7dabe [INFO Client 25996] [ENGINE] Warmup: ON
+2023/10/20 02:00:06 424105234 b51d652c [INFO Client 25996] [RENDER] Warmup: ON
+2023/10/20 02:00:06 424105234 327589f8 [INFO Client 25996] [SHADER] Warmup: ON
+2023/10/20 02:00:06 424105234 b740341a [INFO Client 25996] [DOWNLOAD] Pre-downloading "Content/Data/WorldAreas/HideoutShapersRealm"
+2023/10/20 02:00:06 424105234 b740341a [INFO Client 25996] [DOWNLOAD] Pre-downloading "Streaming/Content/Data/WorldAreas/HideoutShapersRealm"
+2023/10/20 02:00:06 424105234 32758d39 [INFO Client 25996] [SHADER] Delay: OFF
+2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.
+2023/10/20 02:00:07 424106328 32758d39 [INFO Client 25996] [SHADER] Delay: ON
+2023/10/20 02:00:30 424129453 88a904a0 [DEBUG Client 25996] Got Instance Details from login server
+2023/10/20 02:00:30 424129500 84a7dabe [INFO Client 25996] [ENGINE] Warmup: ON
+2023/10/20 02:00:30 424129500 b51d652c [INFO Client 25996] [RENDER] Warmup: ON
+2023/10/20 02:00:30 424129500 327589f8 [INFO Client 25996] [SHADER] Warmup: ON
+2023/10/20 02:00:30 424129500 b740341a [INFO Client 25996] [DOWNLOAD] Pre-downloading "Content/Data/WorldAreas/MapWorldsSiege"
+2023/10/20 02:00:30 424129500 b740341a [INFO Client 25996] [DOWNLOAD] Pre-downloading "Streaming/Content/Data/WorldAreas/MapWorldsSiege"
+2023/10/20 02:00:30 424129500 32758d39 [INFO Client 25996] [SHADER] Delay: OFF
+2023/10/20 02:00:30 424129500 ca3a6a7f [INFO Client 25996] Connecting to instance server at 169.45.83.108:6112
+2023/10/20 02:00:30 424129546 ca3a4dbd [DEBUG Client 25996] Connect time to instance server was 31ms
+2023/10/20 02:00:31 424129593 1186a0e2 [DEBUG Client 25996] Generating level 82 area "MapWorldsSiege" with seed 741064874
+2023/10/20 02:00:33 424132000 f22b6988 [INFO Client 25996] Tile hash: 39546850
+2023/10/20 02:00:33 424132000 f22b6b6e [INFO Client 25996] Doodad hash: 3828567441
+2023/10/20 02:00:34 424133375 1187100e [DEBUG Client 25996] Joined guild named Final Dynasty with 11 members
+2023/10/20 12:39:39 462475437 cffb0719 [INFO Client 27688] : AFK mode is now ON. Autoreply "This player is AFK."
+2023/10/20 13:02:36 463852250 cffb0719 [INFO Client 27688] @From some_user: Hi, I would like to buy your level 20 0% Precision listed for 5 chaos in Ancestor (stash tab "~b/o 5 chaos"; position: left 11, top 9)
+2023/10/20 13:21:06 462562921 cffb0719 [INFO Client 27688] : AFK mode is now OFF.
+2023/10/20 14:36:58 469514500 cffb0719 [INFO Client 29892] : Trade accepted.
