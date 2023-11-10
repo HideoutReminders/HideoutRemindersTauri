@@ -27,11 +27,11 @@ export default function PoEStatus () {
 	else if (paused.reason === "in_safe_zone") {
 		byline = Byline(`Safe in ${poeStatus.zoneName}`, poeStatus.mostRecentLineAt as Date)
 	}
-	else if(paused.reason === "in_unsafe_zone") {
+	else if (paused.reason === "in_unsafe_zone") {
 		// TODO: Detect the right verb based on where you are. "Bossing", "Mapping", "Delving", "Heisting", etc
 		byline = Byline(`In ${poeStatus.zoneName}`, poeStatus.mostRecentLineAt as Date)
 	}
-	else if(paused.reason === "stale_client_txt") {
+	else if (paused.reason === "stale_client_txt") {
 		byline = <>No PoE since <TimeAgo date={poeStatus.mostRecentLineAt} /></>
 	}
 	else if (paused.reason === 'no_zone') {

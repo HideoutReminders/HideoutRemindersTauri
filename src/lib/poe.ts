@@ -113,7 +113,8 @@ export function getPoEPausingStatus (status: null | PoEStatus, settings: Setting
 	}
 
 	// If your client.txt hasn't been updated in this long, we assume you've closed the game
-	const cutoffMS = 1000 * 60 * 10
+	// TODO: Maybe make this a setting?
+	const cutoffMS = 1000 * 60 * 5 // This many minutes
 	const diff = Date.now() - status.mostRecentLineAt.getTime()
 	if (diff >= cutoffMS) {
 		return {
