@@ -10,7 +10,6 @@ import usePlayTTS from "./hooks/use-play-tts";
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import {isPoEStatusPausing} from "./lib/poe";
-import {getVoices} from "./lib/helpers";
 
 function App () {
 	const store = useAppStore()
@@ -32,17 +31,9 @@ function App () {
 	const play = usePlayTTS()
 
 	useEffect(() => {
-		if (!loading) {
-			return
-		}
-	}, [loading, reminders])
-
-	useEffect(() => {
-		getVoices().then(voices => {
-			console.log('Loaded ' + voices.length + ' voices.')
-		})
-		return () => {
-			console.warn('unmounted for some reason')
+		// TODO: Detect dev mode here, and only disable right click when non in dev mode
+		if (true) {
+			document.addEventListener('contextmenu', event => event.preventDefault());
 		}
 	}, [])
 
@@ -62,7 +53,6 @@ function App () {
 
 	useEffect(() => {
 		if (loading) {
-			console.log('do not play while loading')
 			return
 		}
 

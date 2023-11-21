@@ -114,10 +114,8 @@ export const useAppStore = create<ZustandStore>()((set: ZustandSetPlaceHolderTyp
 
 		const results = await Promise.all<Result | null>(POE_CLIENT_TXT_DIRS.map((dir: string) : Promise<Result | null> => {
 			const path = dir + '\\Client.txt'
-			console.log('path', path)
 			return new Promise((res) => {
 				getPoEClientStatus(path).then((status) => {
-					console.log(path, 'status', status)
 					res({
 						date: status.mostRecentLineAt,
 						path,
@@ -127,7 +125,6 @@ export const useAppStore = create<ZustandStore>()((set: ZustandSetPlaceHolderTyp
 				})
 			})
 		}))
-		console.log('results', results)
 		// @ts-ignore
 		const found : Result[] = results.filter(x => !!x)
 		if (found.length === 0) {

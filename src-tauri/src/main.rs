@@ -116,32 +116,25 @@ fn get_poe_status(client_txt_path: &str) -> Result<PoEClientStatus, String> {
 			return Err("That doesn't look like a PoE client.txt file.".to_string());
 		}
 
-		println!("-------");
-		println!("{}", txt);
-
 		// We're reading in reverse order, so the first date we encounter will be the most recent date
 		if poe_status.most_recent_line_at == "" {
 			poe_status.most_recent_line_at = txt[0..DATE_LEN].to_string();
 		}
-		println!("most recent line {}", poe_status.most_recent_line_at);
 
 		let parsed = match parse_line(&txt) {
 			Ok(p) => p,
-			Err(e) => {
-				println!("Let's just skip this line cause of this err: {}", e);
+			Err(_) => {
+				// The error here just means the line doesn't match our regexp. It's just some random client.txt
+				// line we don't care about, so continue on to the next line
 				continue
 			},
 		};
 
 		let msg_len = parsed.msg.len();
-		println!("msg_len {msg_len}");
 		if msg_len >= ZONE_CHANGE_PREFIX_LEN {
 			let pref = &parsed.msg[0..ZONE_CHANGE_PREFIX_LEN];
-			println!("prefix: {}", pref);
 			if pref == ZONE_CHANGE_PREFIX {
-				println!("This looks like a zone change thing!");
 				let zone = &parsed.msg[ZONE_CHANGE_PREFIX_LEN..];
-				println!("zone: {zone}");
 				let slice = &zone[0..zone.len()-1]; // -1 gets rid of the period at the end of the line
 				poe_status.zone_name = format!("{slice}");
 				poe_status.zone_changed_at = parsed.date_time.to_string();
@@ -152,7 +145,6 @@ fn get_poe_status(client_txt_path: &str) -> Result<PoEClientStatus, String> {
 		// Update AFK if we have not already set AFK status and if this line is long enough
 		if !afk_set && msg_len >= AFK_LEN {
 			let pref = &parsed.msg[0..AFK_LEN];
-			println!("afk prefix. Is \"{}\" == \"{}\"", pref, AFK_ON);
 			if pref == AFK_ON {
 				afk_set = true;
 				poe_status.afk = true;
@@ -161,31 +153,9 @@ fn get_poe_status(client_txt_path: &str) -> Result<PoEClientStatus, String> {
 			else if pref == AFK_OFF {
 				afk_set = true;
 				poe_status.afk = false;
-                poe_status.afk_at = parsed.date_time.to_string();
-				println!("AFK IS OFF");
+        poe_status.afk_at = parsed.date_time.to_string();
 			}
 		}
-
-		/*
-		if let Some(found) = line_re.captures(txt) {
-			// This will skip "] : You have entered" if someone is just messing with you by
-			// sending you a PM with that text in it
-			println!("DATE_LEN {DATE_LEN}, found: {found}, you_have_entered_pre_len {you_have_entered_pre_len}");
-			if found > you_have_entered_pre_len {
-				continue
-			}
-			let start = found + ZONE_CHANGE_PREFIX.len();
-			let slice = &without_date[start..without_date.len()-1]; // -1 gets rid of the period at the end of the line
-			poe_status.zone_name = format!("{slice}");
-			poe_status.zone_changed_at = date;
-			break;
-		}
-		else {
-			//println!("No zone change found");
-			// TODO: Look for a line saying you're AFK or not afk
-			continue
-		}
-		*/
 	}
 
 	if num <= 1 {
@@ -416,28 +386,28 @@ mod tests {
     #[test]
     fn test_regexp() -> Result<(), String> {
     	let line_re = get_line_re();
-		let mut line1 = "2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.";
-		let Some(caps) = line_re.captures(line1) else {
-			panic!("Did not find a line");
-		};
-		assert_eq!(&caps[1], "2023/10/20 02:00:07");
-		assert_eq!(&caps[2], ": You have entered Celestial Hideout.");
+			let mut line1 = "2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.";
+			let Some(caps) = line_re.captures(line1) else {
+				panic!("Did not find a line");
+			};
+			assert_eq!(&caps[1], "2023/10/20 02:00:07");
+			assert_eq!(&caps[2], ": You have entered Celestial Hideout.");
 
-		line1 = "2023/10/20 02:00:07 42413205921 cffbsfasb0719 [INFO Client 2595353296] : AFK mode is now ON.";
-		let Some(caps) = line_re.captures(line1) else {
-			panic!("Did not find a line");
-		};
-		assert_eq!(&caps[1], "2023/10/20 02:00:07");
-		assert_eq!(&caps[2], ": AFK mode is now ON.");
+			line1 = "2023/10/20 02:00:07 42413205921 cffbsfasb0719 [INFO Client 2595353296] : AFK mode is now ON.";
+			let Some(caps) = line_re.captures(line1) else {
+				panic!("Did not find a line");
+			};
+			assert_eq!(&caps[1], "2023/10/20 02:00:07");
+			assert_eq!(&caps[2], ": AFK mode is now ON.");
 
-		line1 = "2019/10/20 02:00:11 1 ab [INFO Client 2] : AFK mode is now OFF.";
-        let Some(caps) = line_re.captures(line1) else {
-            panic!("Did not find a line");
-        };
-        assert_eq!(&caps[1], "2019/10/20 02:00:11");
-        assert_eq!(&caps[2], ": AFK mode is now OFF.");
+			line1 = "2019/10/20 02:00:11 1 ab [INFO Client 2] : AFK mode is now OFF.";
+	        let Some(caps) = line_re.captures(line1) else {
+	            panic!("Did not find a line");
+	        };
+	        assert_eq!(&caps[1], "2019/10/20 02:00:11");
+	        assert_eq!(&caps[2], ": AFK mode is now OFF.");
 
-		Ok(())
+			Ok(())
     }
 
     #[test]

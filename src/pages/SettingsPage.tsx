@@ -47,7 +47,6 @@ export default function SettingsPage () {
 
 	useEffect(() => {
 		getVoices().then((voices) => {
-			console.log('voices', voices)
 			setVoices(voices.map((v, idx) => {
 				return {
 					label: v.name + ' (' + v.lang + ')' + (v.default ? ' DEFAULT' : ''),
@@ -110,7 +109,7 @@ export default function SettingsPage () {
 				{settings.lastSavedAt ? <><TimeAgo date={settings.lastSavedAt} /></> : <em>never</em>}
 			</span>
 		</div>
-		<FormGroup label={`Path of Exile Client.txt Location`} description={'The log file is checked to get your PoE location.'}>
+		<FormGroup label={`Path of Exile Client.txt Location`} description={'The log file is checked to get your PoE zone.'}>
 			<div className={'join w-full'}>
 				<input
 					type={'text'}
@@ -171,7 +170,7 @@ export default function SettingsPage () {
 		</FormGroup>
 		<FormGroup
 			label={'Safe Zones'}
-			description={'One per line'}
+			description={'One per line. Reminders will play if you\'re in one of these areas.'}
 			labelExtra={<button
 				type={'button'}
 				onClick={() => {

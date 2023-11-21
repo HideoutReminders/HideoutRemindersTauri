@@ -1,11 +1,111 @@
-import * as chrono from 'chrono-node'
+import * as chronoBase from 'chrono-node'
 import {Reminder, Settings} from "../types/types";
 import {ensureJSONFile, readJSON, REMINDERS_FILE, saveJSON} from "./files";
 import {isPoEStatusPausing, PoEStatus} from "./poe";
 
+const chrono = chronoBase.casual.clone();
+chrono.refiners.push({
+	// Sometimes this library fails to do proper AM/PM handling
+	// So you put "do a thing at 10" when it is 8am and it'll make the date be 10am tomorrow instead of 10pm tonight
+	// The following refine fixes that issue
+	refine: (context, results) => {
+		const regEx = /at [0-9][0-9]?(\:[0-9][0-9]?)?/i
+
+		// All the code in this refine kinda sucks, so I'm leaving function here for you to quickly
+		// toggle logging on and off
+		// This will likely become necessary as more tests are added to reminders.test.ts
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		function log (..._args: any[]) {
+			//console.log.apply(null, arguments)
+		}
+
+		if (!context.text.match(regEx)) {
+			return results
+		}
+
+		results = results.map((res) => {
+			const {start} = res
+			const lower = res.text.toLowerCase()
+			if (!lower.match(regEx)) {
+				return res
+			}
+
+			const numbers = res.text.split(/[^0-9\\:]+/i)
+			log('numbers', numbers)
+			const parts = numbers.join('').split(':')
+			log('parts', parts)
+			let hour = parseInt(parts[0])
+			const minute = parts.length > 1 ? parseInt(parts[1]): 0
+
+			const {
+				impliedValues: implied,
+				knownValues: known,
+			} = start
+			log('res text', res.text)
+			log('implied', implied)
+			log('knwnw', known)
+			const year = known.year || implied.year
+			const month = known.month || implied.month
+			const day = known.day || implied.day
+			log('year', year)
+			log('month', month)
+			log('day', day)
+			log('now', context.refDate)
+			log('minute', minute)
+			log('hour', hour)
+			const isNowAM = context.refDate.getHours() <= 11
+			const assumed = new Date(year, month-1, day, hour, minute, 0)
+			const diff = assumed.getTime() - context.refDate.getTime()
+			const diffHours = diff / 1000 / 60 / 60
+
+			log('diffHours', diffHours)
+			log('assumed to start', assumed)
+			log('start.knownValues', start.knownValues)
+			log('implied', implied)
+
+			if (diffHours > 24) {
+				log('go back one day but forward 12 hours')
+				assumed.setDate(assumed.getDate()-1)
+				assumed.setHours(assumed.getHours()+12)
+			}
+			else if (assumed < context.refDate) {
+				log('just add 12 hours? I dunno about this one')
+				assumed.setHours(assumed.getHours()+12)
+			}
+			else if (diffHours > 12 && !isNowAM && assumed.getHours() > 12) {
+				log('diff is over 12 but it is not the morning')
+				assumed.setDate(assumed.getDate()-1)
+				assumed.setHours(assumed.getHours()+12)
+			}
+			else if (diffHours >= 12 && diffHours <= 24) {
+				assumed.setDate(assumed.getDate()-1)
+				assumed.setHours(assumed.getHours()+12)
+			}
+			else {
+				log('OH NO, just whatever return it I dunno')
+				return res
+			}
+
+			res.start.knownValues.second = assumed.getSeconds()
+			res.start.knownValues.minute = assumed.getMinutes()
+			res.start.knownValues.hour = assumed.getHours()
+			res.start.knownValues.day = assumed.getDate()
+			res.start.knownValues.month = assumed.getMonth()+1
+			res.start.knownValues.year = assumed.getFullYear()
+			res.start.impliedValues = {}
+
+			log('return this', res.start, res.impliedValues)
+
+			return res
+		})
+
+		return results;
+	}
+});
+
 let idCount = 0
-export function promptToReminder (prompt: string) : Reminder {
-	const parsed = chrono.parse(prompt, new Date(), {
+export function promptToReminder (prompt: string, now = new Date()) : Reminder {
+	const parsed = chrono.parse(prompt, now, {
 		forwardDate: true,
 	})
 	let date : Date
@@ -36,8 +136,8 @@ export function promptToReminder (prompt: string) : Reminder {
 		textWithoutDate = text
 	}
 
-	if (date < new Date()) {
-		throw new Error(`Cannot remind in the past: ${date.toISOString()}`)
+	if (date < now) {
+		throw new Error(`Cannot remind in the past: ${date} is before ${now}`)
 	}
 
 	if (!textWithoutDate) {
@@ -46,11 +146,12 @@ export function promptToReminder (prompt: string) : Reminder {
 
 	idCount++
 	const r : Reminder = {
-		id: Date.now() + '_' + idCount,
+		id: now.getTime() + '_' + idCount,
 		text: textWithoutDate,
 		playAfter: date,
 		playedAt: null,
-		createdAt: new Date(),
+		createdAt: now,
+		parsed,
 	}
 
 	return r

@@ -14,4 +14,5 @@ export type Reminder = {
 	playAfter: Date
 	playedAt: null | Date
 	createdAt: Date
+	parsed?: any
 }
