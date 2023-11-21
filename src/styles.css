@@ -134,4 +134,3 @@ body:before {
 .reminder:not(.played) + .played {
     margin-top: 6rem;
 }
-

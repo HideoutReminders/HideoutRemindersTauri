@@ -10,6 +10,7 @@ import usePlayTTS from "./hooks/use-play-tts";
 import SettingsIcon from '@mui/icons-material/Settings';
 
 import {isPoEStatusPausing} from "./lib/poe";
+import PaidVersionPage from "./pages/PaidVersionPage";
 
 function App () {
 	const store = useAppStore()
@@ -18,7 +19,6 @@ function App () {
 		page,
 		removeError,
 		addError,
-		reminders,
 		loading,
 		playingId,
 		saveReminder,
@@ -32,7 +32,7 @@ function App () {
 
 	useEffect(() => {
 		// TODO: Detect dev mode here, and only disable right click when non in dev mode
-		if (true) {
+		if (false) {
 			document.addEventListener('contextmenu', event => event.preventDefault());
 		}
 	}, [])
@@ -153,11 +153,12 @@ function App () {
 	return <>
 		<div id={'header'} className={'sticky top-0 z-50 flex w-full bg-slate-900 drop-shadow-lg justify-between'}>
 			<PoEStatus />
-			<ul className={'flex-0 menu menu-horizontal'}>
+			<ul className={'flex-0 menu menu-horizontal items-center'}>
 				<NavItem
 					label={'Reminders'}
 					page={'main'}
 				/>
+				<NavItem label={'Upgrade'} page={'paid-version'} />
 				<NavItem
 					label={<SettingsIcon />}
 					page={'settings'}
@@ -190,6 +191,7 @@ function App () {
 			</div>
 			{page === 'main' && <MainPage />}
 			{page === 'settings' && <SettingsPage />}
+			{page === 'paid-version' && <PaidVersionPage />}
 		</div>
 	</>
 }

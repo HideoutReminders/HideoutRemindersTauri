@@ -84,14 +84,25 @@ export default function ReminderListItem ({reminder, showPastHeader}: Props) {
 	}
 
 	function postpone (duration: string) {
-		const playAfter = getPlayAfterFromDuration(duration)
+		try {
+			const prompted = promptToReminder(duration + ' ' + playAfter)
+			_save({
+				playedAt: null,
+				playAfter: prompted.playAfter,
+			})
+		}
+		catch (e) {
+			addError({
+				context: 'reminders_edit',
+				message: `Can't figure out that time.`,
+				type: 'known',
+				key: 'postpone_failed',
+			})
+			return null
+		}
 		if (!playAfter) {
 			return
 		}
-		_save({
-			playedAt: null,
-			playAfter: playAfter,
-		})
 	}
 
 	function add (duration: string) {
@@ -105,6 +116,15 @@ export default function ReminderListItem ({reminder, showPastHeader}: Props) {
 		_save({
 			playAfter: newDate,
 		})
+	}
+
+	function clickPostpone () {
+		const time = prompt('Postpone for how long?', '')
+		if (!time) {
+			return
+		}
+		console.log('time', time)
+		postpone(time)
 	}
 
 	async function clickPlayPreview () {
@@ -239,7 +259,8 @@ export default function ReminderListItem ({reminder, showPastHeader}: Props) {
 				<div className={'flex-column items-center pl-2'}>
 					<button className={'btn btn-xs btn-neutral hover:btn-primary me-2'} onClick={() => clickPlayPreview()}>Preview</button>
 					{reminder.playedAt && <div className={'join me-2'}>
-						<button className={'btn btn-xs btn-neutral hover:btn-primary join-item'} onClick={() => postpone('5m')}>Postpone 5m</button>
+						<button className={'btn btn-xs btn-neutral hover:btn-primary join-item'} onClick={clickPostpone}>Postpone</button>
+						<button className={'btn btn-xs btn-neutral hover:btn-primary join-item'} onClick={() => postpone('5m')}>5m</button>
 						<button className={'btn btn-xs btn-neutral hover:btn-primary join-item'} onClick={() => postpone('10m')}>10m</button>
 						<button className={'btn btn-xs btn-neutral hover:btn-primary join-item'} onClick={() => postpone('30m')}>30m</button>
 						<button className={'btn btn-xs btn-neutral hover:btn-primary join-item'} onClick={() => postpone('1h')}>1h</button>

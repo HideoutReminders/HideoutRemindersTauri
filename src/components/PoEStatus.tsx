@@ -11,7 +11,7 @@ function Byline (text: string, updateAt: Date) {
 }
 
 export default function PoEStatus () {
-	const {poeStatus, playing, playingId, reminders, settings} = useAppStore()
+	const {poeStatus, playing, playingId, reminders, settings, setPage} = useAppStore()
 	if (!poeStatus) {
 		return <div></div>
 	}
@@ -61,7 +61,7 @@ export default function PoEStatus () {
 	}
 
 
-	return <div className={'flex p-2 ps-3'}>
+	return <a href={'#'} onClick={() => setPage('main')} className={'flex p-2 ps-3'}>
 		<div className={'me-2 text-lg flex items-center ' + iconColor}>
 			{icon}
 		</div>
@@ -69,5 +69,5 @@ export default function PoEStatus () {
 			<div className={'text-md font-bold ' + titleClasses}>{title}</div>
 			<div className={'status-byline ' + bylineClasses}>{byline}</div>
 		</div>
-	</div>
+	</a>
 }

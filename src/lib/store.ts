@@ -52,7 +52,7 @@ export type AppError = {
 	message: string
 }
 
-export type PageKey = 'main' | 'settings'
+export type PageKey = 'main' | 'settings' | 'paid-version'
 
 export interface AppState {
 	page: PageKey
