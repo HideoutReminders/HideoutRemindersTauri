@@ -383,6 +383,26 @@ mod tests {
         Ok(())
     }
 
+    // This txt file contains text that crashed the app for whatever reason
+    #[test]
+    fn test_get_status_crashed() -> Result<(), String> {
+        let path = &get_test_client_path("crashed");
+        println!("Open {}", path);
+        let status = match get_poe_status(path) {
+            Ok(s) => s,
+            Err(e) => panic!("Should not fail. Got this: {}", e),
+        };
+
+        assert_eq!(status.zone_name, "Celestial Hideout");
+        assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
+        assert_eq!(status.most_recent_line_at, "2023/10/20 14:36:58");
+
+        assert_eq!(status.afk_at, "2023/10/20 13:21:06");
+        assert_eq!(status.afk, false);
+
+        Ok(())
+    }
+
     #[test]
     fn test_regexp() -> Result<(), String> {
     	let line_re = get_line_re();
@@ -433,10 +453,10 @@ mod tests {
 
     #[test]
     fn test_show_pwd() -> Result<(), String> {
-        match env::current_dir() {
-			Ok(dir) => println!("DIR: {}", dir.display()),
-			Err(_) => panic!("this should not fail"),
-        };
-        Ok(())
+      match env::current_dir() {
+				Ok(dir) => println!("DIR: {}", dir.display()),
+				Err(_) => panic!("this should not fail"),
+      };
+      Ok(())
     }
 }
