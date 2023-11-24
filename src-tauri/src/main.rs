@@ -59,8 +59,20 @@ const AFK_LEN : usize = AFK_ON.len();
 const ZONE_CHANGE_PREFIX : &str = ": You have entered ";
 const ZONE_CHANGE_PREFIX_LEN : usize = ZONE_CHANGE_PREFIX.len();
 
-// The number of characters that exist AFTER the date and before a "You have entered XXX." message
+// This function gets the characters from a start point in a string
+// all the way to the end, but it does it with char_indices
+// to account for unicode characters in string like リキッドピープル
+fn get_sub_char_from (text: &str, start: usize) -> &str {
+	let (offset, _) = text.char_indices().nth(start).unwrap();
+	return &text[offset..]
+}
 
+fn get_sub_char_to (text: &str, end: usize) -> &str {
+	let (offset, _) = text.char_indices().nth(end).unwrap();
+	return &text[0..offset]
+}
+
+// The number of characters that exist AFTER the date and before a "You have entered XXX." message
 fn get_poe_status(client_txt_path: &str) -> Result<PoEClientStatus, String> {
 
 
@@ -132,9 +144,9 @@ fn get_poe_status(client_txt_path: &str) -> Result<PoEClientStatus, String> {
 
 		let msg_len = parsed.msg.len();
 		if msg_len >= ZONE_CHANGE_PREFIX_LEN {
-			let pref = &parsed.msg[0..ZONE_CHANGE_PREFIX_LEN];
+			let pref = get_sub_char_to(&parsed.msg, ZONE_CHANGE_PREFIX_LEN);
 			if pref == ZONE_CHANGE_PREFIX {
-				let zone = &parsed.msg[ZONE_CHANGE_PREFIX_LEN..];
+				let zone = get_sub_char_from(&parsed.msg, ZONE_CHANGE_PREFIX_LEN);
 				let slice = &zone[0..zone.len()-1]; // -1 gets rid of the period at the end of the line
 				poe_status.zone_name = format!("{slice}");
 				poe_status.zone_changed_at = parsed.date_time.to_string();
@@ -144,7 +156,8 @@ fn get_poe_status(client_txt_path: &str) -> Result<PoEClientStatus, String> {
 
 		// Update AFK if we have not already set AFK status and if this line is long enough
 		if !afk_set && msg_len >= AFK_LEN {
-			let pref = &parsed.msg[0..AFK_LEN];
+			//let pref = &parsed.msg[0..AFK_LEN];
+			let pref = get_sub_char_to(&parsed.msg, AFK_LEN);
 			if pref == AFK_ON {
 				afk_set = true;
 				poe_status.afk = true;
@@ -206,30 +219,30 @@ fn parse_line(line: &str) -> Result<ClientTxtLine, String> {
 
 fn main() {
 	let quit = CustomMenuItem::new("quit".to_string(), "Quit");
-    let hide = CustomMenuItem::new("hide".to_string(), "Hide");
-    let tray_menu = SystemTrayMenu::new()
+  let hide = CustomMenuItem::new("hide".to_string(), "Hide");
+  let tray_menu = SystemTrayMenu::new()
 		.add_item(quit)
 		.add_native_item(SystemTrayMenuItem::Separator)
 		.add_item(hide);
 	let system_tray = SystemTray::new()
 		.with_menu(tray_menu);
 
-    tauri::Builder::default()
-	    .on_window_event(|event| match event.event() {
+  tauri::Builder::default()
+    .on_window_event(|event| match event.event() {
 			tauri::WindowEvent::CloseRequested { api, .. } => {
-		        event.window().hide().unwrap();
-		        api.prevent_close();
-	        }
+        event.window().hide().unwrap();
+        api.prevent_close();
+      }
 			_ => {}
-	    })
-        .plugin(tauri_plugin_store::Builder::default().build())
-        .invoke_handler(tauri::generate_handler![
-            greet,
-            poe_status,
-            remind,
-        ])
-        .system_tray(system_tray)
-        .on_system_tray_event(|app, event| match event {
+    })
+    .plugin(tauri_plugin_store::Builder::default().build())
+    .invoke_handler(tauri::generate_handler![
+        greet,
+        poe_status,
+        remind,
+    ])
+    .system_tray(system_tray)
+    .on_system_tray_event(|app, event| match event {
 			SystemTrayEvent::LeftClick {
 				position: _,
 				size: _,
@@ -254,209 +267,227 @@ fn main() {
             })
         // This code is from here: https://github.com/tauri-apps/plugins-workspace/tree/v1/plugins/single-instance#usage
 		.plugin(tauri_plugin_single_instance::init(|app, argv, cwd| {
-            println!("{}, {argv:?}, {cwd}", app.package_info().name);
-
-            app.emit_all("single-instance", Payload { args: argv, cwd }).unwrap();
-        }))
-        .run(tauri::generate_context!())
-        .expect("error while running tauri application");
+      println!("{}, {argv:?}, {cwd}", app.package_info().name);
+        app.emit_all("single-instance", Payload { args: argv, cwd }).unwrap();
+      }))
+    .run(tauri::generate_context!())
+    .expect("error while running tauri application");
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+  use super::*;
 
 	fn get_test_client_path(name: &str) -> String {
 		let dir = match env::current_dir() {
 			Ok(x) => x,
 			Err(_) => panic!("this should not fail"),
-        };
+    };
 
-        return dir.display().to_string() + "\\test-clients\\Client." + name + ".txt";
+    return dir.display().to_string() + "\\test-clients\\Client." + name + ".txt";
 	}
 
-    #[test]
-    fn test_error_res() -> Result<(), String> {
-        assert_eq!(error_res(String::from("This is a sample test")), r#"{"success":false,"message":"This is a sample test"}"#);
-        Ok(())
-    }
+  #[test]
+  fn test_error_res() -> Result<(), String> {
+    assert_eq!(error_res(String::from("This is a sample test")), r#"{"success":false,"message":"This is a sample test"}"#);
+    Ok(())
+  }
 
-    #[test]
-    fn test_get_client_non_existant() -> Result<(), String> {
+  #[test]
+  fn test_get_client_non_existant() -> Result<(), String> {
 		match get_poe_status("/path/to/where/file/is/not/client.txt") {
 			Ok(_) => panic!("Should not succeed"),
 			Err(e) => assert_eq!(e.to_string(), "Could not open file: The system cannot find the path specified. (os error 3)"),
 		};
 		Ok(())
-    }
+  }
 
-    #[test]
-    fn test_get_client_blank_path() -> Result<(), String> {
-        match get_poe_status("") {
-            Ok(_) => panic!("Should not succeed"),
-            Err(e) => assert_eq!(e.to_string(), "Client.txt path is blank"),
-        };
-        Ok(())
-    }
-
-    #[test]
-    fn test_get_status_empty() -> Result<(), String> {
-        match get_poe_status(&get_test_client_path("empty")) {
-            Ok(_) => panic!("Should not succeed"),
-            Err(e) => assert_eq!(e.to_string(), "Could not find any lines in Client.txt"),
-        };
-        Ok(())
-    }
-
-    #[test]
-    fn test_get_status_celestial_hideout() -> Result<(), String> {
-        let path = &get_test_client_path("celestial-hideout");
-        println!("Open {}", path);
-        let status = match get_poe_status(path) {
-            Ok(s) => s,
-            Err(e) => panic!("Should not fail. Got this: {}", e),
-        };
-
-        assert_eq!(status.zone_name, "Celestial Hideout");
-        assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
-        assert_eq!(status.most_recent_line_at, "2023/10/20 02:00:34");
-
-        Ok(())
-    }
-
-	// This test is to ensure that checking client.txt doesn't pick up private
-	// messages from other users
-    #[test]
-    fn test_get_status_malicious_text() -> Result<(), String> {
-        let path = &get_test_client_path("malicious-text");
-        println!("Open {}", path);
-        let status = match get_poe_status(path) {
-            Ok(s) => s,
-            Err(e) => panic!("Should not fail. Got this: {}", e),
-        };
-
-		assert_ne!(status.zone_name, "Stupid Hideout");
-        assert_eq!(status.zone_name, "Celestial Hideout");
-        assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
-        assert_eq!(status.most_recent_line_at, "2023/10/21 02:00:06");
-
-        Ok(())
-    }
-
-
-    #[test]
-    fn test_get_status_celestial_afk() -> Result<(), String> {
-        let path = &get_test_client_path("celestial-afk");
-        println!("Open {}", path);
-        let status = match get_poe_status(path) {
-            Ok(s) => s,
-            Err(e) => panic!("Should not fail. Got this: {}", e),
-        };
-
-        assert_eq!(status.zone_name, "Celestial Hideout");
-        assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
-        assert_eq!(status.most_recent_line_at, "2023/10/20 13:02:36");
-
-        assert_eq!(status.afk_at, "2023/10/20 12:39:39");
-        assert_eq!(status.afk, true);
-
-        Ok(())
-    }
-
-
-    #[test]
-    fn test_get_status_celestial_afk_off() -> Result<(), String> {
-        let path = &get_test_client_path("celestial-afk-off");
-        println!("Open {}", path);
-        let status = match get_poe_status(path) {
-            Ok(s) => s,
-            Err(e) => panic!("Should not fail. Got this: {}", e),
-        };
-
-        assert_eq!(status.zone_name, "Celestial Hideout");
-        assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
-        assert_eq!(status.most_recent_line_at, "2023/10/20 14:36:58");
-
-        assert_eq!(status.afk_at, "2023/10/20 13:21:06");
-        assert_eq!(status.afk, false);
-
-        Ok(())
-    }
-
-    // This txt file contains text that crashed the app for whatever reason
-    #[test]
-    fn test_get_status_crashed() -> Result<(), String> {
-        let path = &get_test_client_path("crashed");
-        println!("Open {}", path);
-        let status = match get_poe_status(path) {
-            Ok(s) => s,
-            Err(e) => panic!("Should not fail. Got this: {}", e),
-        };
-
-        assert_eq!(status.zone_name, "Celestial Hideout");
-        assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
-        assert_eq!(status.most_recent_line_at, "2023/10/20 14:36:58");
-
-        assert_eq!(status.afk_at, "2023/10/20 13:21:06");
-        assert_eq!(status.afk, false);
-
-        Ok(())
-    }
-
-    #[test]
-    fn test_regexp() -> Result<(), String> {
-    	let line_re = get_line_re();
-			let mut line1 = "2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.";
-			let Some(caps) = line_re.captures(line1) else {
-				panic!("Did not find a line");
-			};
-			assert_eq!(&caps[1], "2023/10/20 02:00:07");
-			assert_eq!(&caps[2], ": You have entered Celestial Hideout.");
-
-			line1 = "2023/10/20 02:00:07 42413205921 cffbsfasb0719 [INFO Client 2595353296] : AFK mode is now ON.";
-			let Some(caps) = line_re.captures(line1) else {
-				panic!("Did not find a line");
-			};
-			assert_eq!(&caps[1], "2023/10/20 02:00:07");
-			assert_eq!(&caps[2], ": AFK mode is now ON.");
-
-			line1 = "2019/10/20 02:00:11 1 ab [INFO Client 2] : AFK mode is now OFF.";
-	        let Some(caps) = line_re.captures(line1) else {
-	            panic!("Did not find a line");
-	        };
-	        assert_eq!(&caps[1], "2019/10/20 02:00:11");
-	        assert_eq!(&caps[2], ": AFK mode is now OFF.");
-
-			Ok(())
-    }
-
-    #[test]
-    fn test_parse_line() -> Result<(), String> {
-	    let line1 = "2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.";
-	    let parsed = match parse_line(line1) {
-	        Ok(x) => x,
-	        Err(e) => panic!("{}", e),
-	    };
-	    assert_eq!(parsed.date_time, "2023/10/20 02:00:07");
-	    assert_eq!(parsed.msg, ": You have entered Celestial Hideout.");
-
-	    let line1 = "2023/01/20 02:11:07 1 ab [INFO Client 1] @From Meanie: Hi, does this mess up your app? 2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.";
-	    let parsed = match parse_line(line1) {
-	        Ok(x) => x,
-	        Err(e) => panic!("{}", e),
-	    };
-	    assert_eq!(parsed.date_time, "2023/01/20 02:11:07");
-	    assert_eq!(parsed.msg, "@From Meanie: Hi, does this mess up your app? 2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.");
-
-	    Ok(())
-    }
-
-    #[test]
-    fn test_show_pwd() -> Result<(), String> {
-      match env::current_dir() {
-				Ok(dir) => println!("DIR: {}", dir.display()),
-				Err(_) => panic!("this should not fail"),
+  #[test]
+  fn test_get_client_blank_path() -> Result<(), String> {
+      match get_poe_status("") {
+          Ok(_) => panic!("Should not succeed"),
+          Err(e) => assert_eq!(e.to_string(), "Client.txt path is blank"),
       };
       Ok(())
-    }
+  }
+
+  #[test]
+  fn test_get_status_empty() -> Result<(), String> {
+      match get_poe_status(&get_test_client_path("empty")) {
+          Ok(_) => panic!("Should not succeed"),
+          Err(e) => assert_eq!(e.to_string(), "Could not find any lines in Client.txt"),
+      };
+      Ok(())
+  }
+
+  #[test]
+  fn test_get_status_celestial_hideout() -> Result<(), String> {
+      let path = &get_test_client_path("celestial-hideout");
+      println!("Open {}", path);
+      let status = match get_poe_status(path) {
+          Ok(s) => s,
+          Err(e) => panic!("Should not fail. Got this: {}", e),
+      };
+
+      assert_eq!(status.zone_name, "Celestial Hideout");
+      assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
+      assert_eq!(status.most_recent_line_at, "2023/10/20 02:00:34");
+
+      Ok(())
+  }
+
+// This test is to ensure that checking client.txt doesn't pick up private
+// messages from other users
+  #[test]
+  fn test_get_status_malicious_text() -> Result<(), String> {
+      let path = &get_test_client_path("malicious-text");
+      println!("Open {}", path);
+      let status = match get_poe_status(path) {
+          Ok(s) => s,
+          Err(e) => panic!("Should not fail. Got this: {}", e),
+      };
+
+	assert_ne!(status.zone_name, "Stupid Hideout");
+      assert_eq!(status.zone_name, "Celestial Hideout");
+      assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
+      assert_eq!(status.most_recent_line_at, "2023/10/21 02:00:06");
+
+      Ok(())
+  }
+
+
+  #[test]
+  fn test_get_status_celestial_afk() -> Result<(), String> {
+      let path = &get_test_client_path("celestial-afk");
+      println!("Open {}", path);
+      let status = match get_poe_status(path) {
+          Ok(s) => s,
+          Err(e) => panic!("Should not fail. Got this: {}", e),
+      };
+
+      assert_eq!(status.zone_name, "Celestial Hideout");
+      assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
+      assert_eq!(status.most_recent_line_at, "2023/10/20 13:02:36");
+
+      assert_eq!(status.afk_at, "2023/10/20 12:39:39");
+      assert_eq!(status.afk, true);
+
+      Ok(())
+  }
+
+
+  #[test]
+  fn test_get_status_celestial_afk_off() -> Result<(), String> {
+      let path = &get_test_client_path("celestial-afk-off");
+      println!("Open {}", path);
+      let status = match get_poe_status(path) {
+          Ok(s) => s,
+          Err(e) => panic!("Should not fail. Got this: {}", e),
+      };
+
+      assert_eq!(status.zone_name, "Celestial Hideout");
+      assert_eq!(status.zone_changed_at, "2023/10/20 02:00:07");
+      assert_eq!(status.most_recent_line_at, "2023/10/20 14:36:58");
+
+      assert_eq!(status.afk_at, "2023/10/20 13:21:06");
+      assert_eq!(status.afk, false);
+
+      Ok(())
+  }
+
+  // This txt file contains text that crashed the app for whatever reason
+  #[test]
+  fn test_get_status_crashed() -> Result<(), String> {
+      let path = &get_test_client_path("crashed");
+      println!("Open {}", path);
+      let status = match get_poe_status(path) {
+          Ok(s) => s,
+          Err(e) => panic!("Should not fail. Got this: {}", e),
+      };
+
+      assert_eq!(status.zone_name, "");
+      assert_eq!(status.zone_changed_at, "");
+      assert_eq!(status.most_recent_line_at, "2023/11/16 22:53:58");
+
+      assert_eq!(status.afk_at, "");
+      assert_eq!(status.afk, false);
+
+      Ok(())
+  }
+
+  #[test]
+  fn test_regexp() -> Result<(), String> {
+    let line_re = get_line_re();
+		let mut line1 = "2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.";
+		let Some(caps) = line_re.captures(line1) else {
+			panic!("Did not find a line");
+		};
+		assert_eq!(&caps[1], "2023/10/20 02:00:07");
+		assert_eq!(&caps[2], ": You have entered Celestial Hideout.");
+
+		line1 = "2023/10/20 02:00:07 42413205921 cffbsfasb0719 [INFO Client 2595353296] : AFK mode is now ON.";
+		let Some(caps) = line_re.captures(line1) else {
+			panic!("Did not find a line");
+		};
+		assert_eq!(&caps[1], "2023/10/20 02:00:07");
+		assert_eq!(&caps[2], ": AFK mode is now ON.");
+
+		line1 = "2019/10/20 02:00:11 1 ab [INFO Client 2] : AFK mode is now OFF.";
+        let Some(caps) = line_re.captures(line1) else {
+            panic!("Did not find a line");
+        };
+        assert_eq!(&caps[1], "2019/10/20 02:00:11");
+        assert_eq!(&caps[2], ": AFK mode is now OFF.");
+
+		Ok(())
+  }
+
+	#[test]
+	fn test_char_indices() -> Result<(), String> {
+		let text = "To colin";
+		let text2 = "To リキッドピープル";
+
+		let nth = 5;
+
+		let (offset, _) = text.char_indices().nth(nth).unwrap();
+    println!("offset {}", offset); // 3
+    let s1: &str = &text[offset..];
+    println!("s1 {s1}");
+
+    let (offset2, _) = text2.char_indices().nth(nth).unwrap();
+    println!("offset2 {}", offset2); // 3
+    let s2: &str = &text2[offset2..];
+    println!("s2 {s2}");
+		Ok(())
+	}
+
+  #[test]
+  fn test_parse_line() -> Result<(), String> {
+    let line1 = "2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.";
+    let parsed = match parse_line(line1) {
+        Ok(x) => x,
+        Err(e) => panic!("{}", e),
+    };
+    assert_eq!(parsed.date_time, "2023/10/20 02:00:07");
+    assert_eq!(parsed.msg, ": You have entered Celestial Hideout.");
+
+    let line1 = "2023/01/20 02:11:07 1 ab [INFO Client 1] @From Meanie: Hi, does this mess up your app? 2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.";
+    let parsed = match parse_line(line1) {
+        Ok(x) => x,
+        Err(e) => panic!("{}", e),
+    };
+    assert_eq!(parsed.date_time, "2023/01/20 02:11:07");
+    assert_eq!(parsed.msg, "@From Meanie: Hi, does this mess up your app? 2023/10/20 02:00:07 424105921 cffb0719 [INFO Client 25996] : You have entered Celestial Hideout.");
+
+    Ok(())
+  }
+
+  #[test]
+  fn test_show_pwd() -> Result<(), String> {
+    match env::current_dir() {
+			Ok(dir) => println!("DIR: {}", dir.display()),
+			Err(_) => panic!("this should not fail"),
+    };
+    Ok(())
+  }
 }
